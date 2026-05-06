@@ -1,0 +1,18 @@
+# Python virtual environments
+.venv/
+venv/
+backend/venv/
+
+# Environment files
+*.env
+backend/.env
+
+# Python cache
+__pycache__/
+backend/__pycache__/
+*.py[cod]
+
+# Editor and OS files
+*.swp
+*.swo
+.DS_Store
