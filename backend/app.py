@@ -48,12 +48,47 @@ class Decision(BaseModel):
     confidence: int
     reason: str
 
+class CVTailoringPlan(BaseModel):
+    recommended_cv_title: str
+    profile_focus: str
+    skills_to_emphasize: list[str]
+    projects_to_emphasize: list[str]
+    experience_to_emphasize: list[str]
+    keywords_to_include: list[str]
+    sections_to_adjust: list[str]
+    tailoring_strategy: str
+
+class CoverLetterPlan(BaseModel):
+    tone: str
+    main_motivation: str
+    strongest_selling_points: list[str]
+    company_alignment_points: list[str]
+    key_experiences_to_mention: list[str]
+    key_skills_to_highlight: list[str]
+    suggested_opening_focus: str
+    suggested_closing_focus: str
+    things_to_avoid: list[str]
+
+class RiskGapAnalysis(BaseModel):
+    major_gaps: list[str]
+    minor_gaps: list[str]
+    potential_red_flags: list[str]
+    compensation_strategies: list[str]
+    interview_preparation_topics: list[str]
+    estimated_competitiveness: str
+    overall_risk_level: str
+
+
 
 class JobAnalysisResponse(BaseModel):
     core_fields: CoreFields
     match_analysis: MatchAnalysis
     dynamic_entries: dict
     decision: Decision
+    cv_tailoring_plan: CVTailoringPlan
+    cover_letter_plan: CoverLetterPlan
+    risk_gap_analysis: RiskGapAnalysis
+
 
 def clean_ai_json(raw_text: str) -> str:
     text = raw_text.strip()
@@ -125,6 +160,36 @@ def request_ai (job_description: str, user_profile: str):
                     "priority": "high",
                     "confidence": 85,
                     "reason": ""
+                },
+                "cv_tailoring_plan": {
+                    "recommended_cv_title": "",
+                    "profile_focus": "",
+                    "skills_to_emphasize": [],
+                    "projects_to_emphasize": [],
+                    "experience_to_emphasize": [],
+                    "keywords_to_include": [],
+                    "sections_to_adjust": [],
+                    "tailoring_strategy": ""
+                },
+                "cover_letter_plan": {
+                    "tone": "",
+                    "main_motivation": "",
+                    "strongest_selling_points": [],
+                    "company_alignment_points": [],
+                    "key_experiences_to_mention": [],
+                    "key_skills_to_highlight": [],
+                    "suggested_opening_focus": "",
+                    "suggested_closing_focus": "",
+                    "things_to_avoid": []
+                },
+                "risk_gap_analysis": {
+                    "major_gaps": [],
+                    "minor_gaps": [],
+                    "potential_red_flags": [],
+                    "compensation_strategies": [],
+                    "interview_preparation_topics": [],
+                    "estimated_competitiveness": "",
+                    "overall_risk_level": ""
                 }
                 }
 
@@ -164,6 +229,39 @@ def request_ai (job_description: str, user_profile: str):
                 - Do not use ```json.
                 - Do not use code fences.
                 - Return no text before or after the JSON.
+                - emphasize strongest matching skills
+                - optimize for ATS keywords
+                - prioritize relevant projects
+                - reduce unrelated focus
+                - align CV title with role
+
+                Cover letter planning rules:
+
+                - cover_letter_plan must not write the full cover letter.
+                - It must only plan what the cover letter should focus on.
+                - tone must match the job description language and company style.
+                - main_motivation must connect the candidate’s background with the role.
+                - strongest_selling_points must come from the user_profile.
+                - company_alignment_points must come from the job description.
+                - key_experiences_to_mention must select only relevant experience.
+                - key_skills_to_highlight must prioritize skills from the job requirements.
+                - suggested_opening_focus must explain what the first paragraph should emphasize.
+                - suggested_closing_focus must explain what the final paragraph should emphasize.
+                - things_to_avoid must list irrelevant or weak topics that should not be emphasized.
+                - Do not invent company facts that are not in the job description.
+                - Keep all values concise and application-focused.
+
+                Risk and gap analysis rules:
+
+                - major_gaps must contain important missing requirements.
+                - minor_gaps must contain smaller missing skills or experiences.
+                - potential_red_flags must identify possible recruiter concerns.
+                - compensation_strategies must explain how the candidate can offset weaknesses.
+                - interview_preparation_topics must suggest areas the candidate should prepare for.
+                - estimated_competitiveness must estimate how competitive the candidate is for the role.
+                - overall_risk_level must be low, medium, or high.
+                - Do not invent unrealistic risks.
+                - Focus only on information present in the profile and job description.
                 """
                 },
                 {
