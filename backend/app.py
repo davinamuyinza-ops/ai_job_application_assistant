@@ -7,12 +7,19 @@ import json
 from prompts.analysis_prompt import build_analysis_prompt
 from prompts.resume_tailoring_prompt import build_resume_tailoring_prompt
 from prompts.cover_letter_prompt import build_cover_letter_generation_prompt
+from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 app = FastAPI(title="AI Job Application Assistant")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class JobRequest(BaseModel):
     job_description: str
