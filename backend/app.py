@@ -13,7 +13,7 @@ app = FastAPI(title="AI Job Application Assistant")
 
 class JobRequest(BaseModel):
     job_description: str
-    user_profile: str
+    resume_json: dict
 
 class CoreFields(BaseModel):
     job_title: str
@@ -87,8 +87,6 @@ class WorkflowRecommendations(BaseModel):
     networking_suggestions: list[str]
     deadline_awareness: str
 
-
-
 class JobAnalysisResponse(BaseModel):
     core_fields: CoreFields
     match_analysis: MatchAnalysis
@@ -98,6 +96,19 @@ class JobAnalysisResponse(BaseModel):
     cover_letter_plan: CoverLetterPlan
     risk_gap_analysis: RiskGapAnalysis
     workflow_recommendations: WorkflowRecommendations
+
+
+
+class ResumeTailoringRequest(BaseModel):
+    job_description: str
+    resume_json: dict
+    job_analysis: dict
+
+class ResumeTailoringResponse(BaseModel):
+    tailored_resume_json: dict
+    change_summary: list[str]
+    ats_keywords_added: list[str]
+    sections_changed: list[str]
 
 
 SYSTEM_ROLE = """
@@ -275,6 +286,68 @@ Workflow recommendation rules:
 - Avoid generic advice.
 """
 
+RESUME_TAILORING_ROLE = """
+You are an advanced ATS and resume tailoring assistant.
+
+Your task is to modify an existing Reactive Resume JSON structure to better match a provided job description.
+
+You must preserve the original JSON structure and only improve relevant resume content.
+"""
+
+RESUME_TAILORING_RULES = """
+Analysis-driven optimization rules:
+
+- Use the provided deep job analysis aggressively and strategically.
+- Prioritize ATS keywords identified in the analysis.
+- Emphasize the strongest candidate-job matches.
+- Reduce emphasis on weaker or less relevant content.
+- Strengthen transferable skills where direct experience is missing.
+- Rewrite summaries and descriptions to better align with recruiter expectations.
+- Use the match_analysis section to identify which strengths should be emphasized most.
+- Use the risk_gap_analysis section to reduce recruiter concerns when possible.
+- Use the cv_tailoring_plan section as the primary resume optimization strategy.
+- Optimize the resume specifically for recruiter scanning and ATS ranking.
+- Make meaningful improvements, not only cosmetic wording changes.
+- Prioritize relevance over completeness.
+- Keep all edits truthful to the existing background and experience.
+
+Resume tailoring rules:
+
+You must return exactly this top-level JSON structure:
+
+{
+  "tailored_resume_json": {},
+  "change_summary": [],
+  "ats_keywords_added": [],
+  "sections_changed": []
+}
+
+The modified resume JSON must be placed inside tailored_resume_json.
+Do not return the resume JSON directly at the top level.
+- change_summary must list the main changes made.
+- ats_keywords_added must list ATS keywords added or emphasized.
+- sections_changed must list sections changed, such as basics, skills, projects, experience.
+- Preserve the existing JSON structure.
+- Preserve all IDs, metadata, layout settings, colors, template settings, and formatting fields.
+- Do not remove required sections.
+- Only improve resume content for ATS and recruiter relevance.
+- Modify only relevant fields such as:
+  - headline/title
+  - summary/profile
+  - skills
+  - project descriptions
+  - experience bullet points
+- Do not invent fake experience, fake projects, fake education, or fake certifications.
+- Tailor wording toward the job description.
+- Add relevant ATS keywords naturally.
+- Keep bullet points concise and professional.
+- Match the language of the job description.
+- Return ONLY valid JSON.
+- Return the FULL updated resume JSON.
+- Do not wrap JSON in markdown.
+- Do not use code fences.
+"""
+
 def build_analysis_prompt() -> str:
     return f"""
 {SYSTEM_ROLE}
@@ -290,6 +363,13 @@ def build_analysis_prompt() -> str:
 {RISK_RULES}
 
 {WORKFLOW_RULES}
+"""
+
+def build_resume_tailoring_prompt() -> str:
+    return f"""
+{RESUME_TAILORING_ROLE}
+
+{RESUME_TAILORING_RULES}
 """
 
 def clean_ai_json(raw_text: str) -> str:
@@ -361,10 +441,83 @@ def run_full_job_analysis(job_description: str, user_profile: str):
             }
         )
 
+
+def tailor_resume_json(job_description: str, resume_json: dict, job_analysis: dict):
+    response = None
+    tailored_json = None
+
+    try:
+        response = client.responses.create(
+            model="gpt-4.1-mini",
+            input=[
+                {
+                    "role": "system",
+                    "content": build_resume_tailoring_prompt()
+                },
+                {
+                    "role": "user",
+                    "content": f"""
+                        Job Description:
+                        {job_description}
+
+                        Deep Job Analysis:
+                        {json.dumps(job_analysis)}
+
+                        Reactive Resume JSON:
+                        {json.dumps(resume_json)}
+                    """
+                }
+            ]
+        )
+
+        raw_output = response.output_text
+
+        cleaned_output = clean_ai_json(raw_output)
+
+        tailored_json = json.loads(cleaned_output)
+
+        validated_result = ResumeTailoringResponse.model_validate(tailored_json)
+        return validated_result
+
+    except json.JSONDecodeError as exc:
+        raw_output = response.output_text if response else "No response received"
+
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "AI returned invalid JSON",
+                "message": str(exc),
+                "raw_response": raw_output
+            }
+        )
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Unexpected backend error",
+                "message": str(error)
+            }
+        )
+
 @app.post("/analyze-job")
 def analyze_job(payload: JobRequest):
-    ai_result= run_full_job_analysis(payload.job_description, payload.user_profile)
+    resume_profile = json.dumps(payload.resume_json)
+
+    ai_result = run_full_job_analysis(
+        payload.job_description,
+        resume_profile
+    )
     return ai_result
+
+@app.post("/tailor-resume")
+def tailor_resume(payload: ResumeTailoringRequest):
+    result = tailor_resume_json(
+        payload.job_description,
+        payload.resume_json,
+        payload.job_analysis
+    )
+    return result
 
 
 @app.get("/health")
