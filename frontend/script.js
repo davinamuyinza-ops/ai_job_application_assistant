@@ -5,7 +5,8 @@ let storedTailoredResume = null;
 let storedCoverLetter = null;
 
 async function analyzeJob() {
-
+    
+    try {
     const jobDescription =
         document.getElementById("jobDescription").value;
 
@@ -49,11 +50,19 @@ async function analyzeJob() {
     // JSON.stringify(data, null, 2) formats the JSON data with indentation for better readability
     document.getElementById("results").textContent =
         JSON.stringify(data, null, 2);
+    
+    } catch (error) {
+        console.log(error);
+
+        document.getElementById("analysisResults").textContent =
+            "Something went wrong while analyzing the job.";
+    }
 
 }
 
 async function generateResume() {
 
+    try {
     const requestBody = {
         job_description: storedJobDescription,
         resume_json: storedResumeJson,
@@ -83,10 +92,18 @@ async function generateResume() {
 
     document.getElementById("resumeResults").textContent =
         JSON.stringify(data, null, 2);
+
+    } catch (error) {
+        console.log(error);
+
+        document.getElementById("resumeResults").textContent =
+            "Something went wrong while generating the tailored resume.";
+    }
 }
 
 async function generateCoverLetter() {
 
+    try {
     const requestBody = {
         job_description: storedJobDescription,
         resume_json: storedResumeJson,
@@ -116,6 +133,13 @@ async function generateCoverLetter() {
 
     document.getElementById("coverLetterResults").textContent =
         JSON.stringify(data, null, 2);
+
+    } catch (error) {
+        console.log(error);
+
+        document.getElementById("coverLetterResults").textContent =
+            "Something went wrong while generating the cover letter.";
+    }
 }
 
 function downloadResumeJson() {
