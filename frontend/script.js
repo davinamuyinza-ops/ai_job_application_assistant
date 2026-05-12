@@ -31,6 +31,9 @@ async function analyzeJob() {
 
     console.log(requestBody);
 
+    document.getElementById("analysisResults").textContent =
+    "Analyzing job description...";
+
     const response = await fetch("http://127.0.0.1:8000/analyze-job", {
         method: "POST",
         headers: {
@@ -58,6 +61,9 @@ async function generateResume() {
     };
 
     console.log(requestBody);
+
+    document.getElementById("resumeResults").textContent =
+    "Generating tailored resume...";
 
     const response = await fetch(
         "http://127.0.0.1:8000/tailor-resume",
@@ -88,6 +94,9 @@ async function generateCoverLetter() {
     };
 
     console.log(requestBody);
+
+    document.getElementById("coverLetterResults").textContent =
+    "Generating cover letter...";
 
     const response = await fetch(
         "http://127.0.0.1:8000/generate-cover-letter",

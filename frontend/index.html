@@ -3,66 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
     <title>AI Job Application Assistant</title>
 </head>
 
 <body>
+    <div class = "container">
 
-    <h1>AI Job Application Assistant</h1>
+        <h1>AI Job Application Assistant</h1>
 
-    <div>
-        <h2>Upload Resume JSON</h2>
+        <div>
+            <h2>Upload Resume JSON</h2>
 
-        <input 
-            type="file" 
-            id="resumeUpload" 
-            accept=".json"
-        >
-    </div>
+            <input 
+                type="file" 
+                id="resumeUpload" 
+                accept=".json"
+            >
+        </div>
 
-    <div>
-        <h2>Job Description</h2>
+        <div>
+            <h2>Job Description</h2>
 
-        <textarea
-            id="jobDescription"
-            placeholder="Paste the job description here..."
-            rows="15"
-            cols="80"
-        ></textarea>
-    </div>
+            <textarea
+                id="jobDescription"
+                placeholder="Paste the job description here..."
+                rows="15"
+                cols="80"
+            ></textarea>
+        </div>
 
-    <div>
-        <button onclick="analyzeJob()">
-            Analyze Job
+        <div>
+            <button onclick="analyzeJob()">
+                Analyze Job
+            </button>
+        </div>
+
+        <div>
+            <h2>Results</h2>
+
+            <pre id="results"></pre>
+        </div>
+        <hr>
+        <div>
+            <button onclick="generateResume()">
+                Generate Tailored Resume
+            </button>
+        <h2>Tailored Resume</h2>
+        <pre id="resumeResults"></pre>
+        <button onclick="downloadResumeJson()">
+                Download Tailored Resume JSON
         </button>
+        </div>
+        <hr>
+        <div>
+            <button onclick="generateCoverLetter()">
+                Generate Cover Letter
+            </button>
+            <h2>Cover Letter</h2>
+            <pre id="coverLetterResults"></pre>
+            <button onclick="downloadCoverLetter()">
+                Download Cover Letter
+            </button>
+        </div>
     </div>
-
-    <div>
-        <h2>Results</h2>
-
-        <pre id="results"></pre>
-    </div>
-    <div>
-        <button onclick="generateResume()">
-            Generate Tailored Resume
-        </button>
-       <h2>Tailored Resume</h2>
-       <pre id="resumeResults"></pre>
-       <button onclick="downloadResumeJson()">
-             Download Tailored Resume JSON
-       </button>
-    </div>
-    <div>
-        <button onclick="generateCoverLetter()">
-            Generate Cover Letter
-        </button>
-        <h2>Cover Letter</h2>
-        <pre id="coverLetterResults"></pre>
-        <button onclick="downloadCoverLetter()">
-            Download Cover Letter
-        </button>
-    </div>
-   <script src="script.js"></script>
-
+    <script src="script.js"></script>
 </body>
 </html>
