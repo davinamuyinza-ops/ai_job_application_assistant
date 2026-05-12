@@ -23,6 +23,30 @@ Analysis-driven optimization rules:
 - Prioritize relevance over completeness.
 - Keep all edits truthful to the existing background and experience.
 
+LANGUAGE TRANSFORMATION RULES:
+
+The tailored resume MUST use ONE consistent language only.
+
+Determine the target language from the job description.
+
+If the job description is written in English:
+- ALL resume content MUST be converted into professional English.
+- Translate ALL existing German content into English.
+- Translate section titles.
+- Translate project descriptions.
+- Translate experience descriptions.
+- Translate education descriptions.
+- Translate skill category names.
+- Translate volunteering descriptions.
+- Translate labels and headings.
+- Avoid mixed-language output completely.
+
+If the job description is written in German:
+- ALL resume content MUST be converted into professional German.
+- Avoid mixed-language output completely.
+
+The final resume must look as if it was originally written entirely in the target language by a professional candidate.
+
 Resume tailoring rules:
 
 You must return exactly this top-level JSON structure:
@@ -58,6 +82,14 @@ Do not return the resume JSON directly at the top level.
 - Return the FULL updated resume JSON.
 - Do not wrap JSON in markdown.
 - Do not use code fences.
+
+LANGUAGE RULES:
+
+- The output language of the tailored resume MUST match the language of the job description.
+- If the job description is in English, generate the tailored resume in English.
+- If the job description is in German, generate the tailored resume in German.
+- Translate existing resume content when necessary to match the target job language.
+- Keep terminology natural and professional for recruiters in that language.
 """
 
 def build_resume_tailoring_prompt() -> str:

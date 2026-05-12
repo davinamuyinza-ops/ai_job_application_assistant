@@ -10,6 +10,21 @@ The cover letter must maximize recruiter relevance while remaining truthful to t
 """
 
 COVER_LETTER_GENERATION_RULES = """
+LANGUAGE RULES:
+
+The generated cover letter MUST fully match the language of the job description.
+
+If the job description is in English:
+- Generate the ENTIRE cover letter in professional English.
+- Do NOT mix German and English.
+- Translate any referenced resume information into English naturally.
+
+If the job description is in German:
+- Generate the ENTIRE cover letter in professional German.
+- Do NOT mix languages.
+
+The final cover letter must read as if originally written by a native professional applicant in the target language.
+
 Cover letter generation rules:
 
 - Generate a complete professional cover letter.
@@ -27,6 +42,7 @@ Cover letter generation rules:
 - Make the letter concise and recruiter-friendly.
 - Focus on relevance and motivation.
 - The cover letter must feel personalized for the specific role.
+- The generated cover letter language MUST match the language of the job description.
 """
 
 
