@@ -8,6 +8,8 @@ from prompts.analysis_prompt import build_analysis_prompt
 from prompts.resume_tailoring_prompt import build_resume_tailoring_prompt
 from prompts.cover_letter_prompt import build_cover_letter_generation_prompt
 from fastapi.middleware.cors import CORSMiddleware
+import requests
+from bs4 import BeautifulSoup
 
 load_dotenv()
 
@@ -131,6 +133,12 @@ class CoverLetterGenerationResponse(BaseModel):
     key_points_used: list[str]
     tone_used: str
 
+
+class JobUrlRequest(BaseModel):
+    job_url: str
+
+class JobUrlResponse(BaseModel):
+    job_text: str
 
 
 def clean_ai_json(raw_text: str) -> str:
@@ -333,6 +341,37 @@ def generate_cover_letter(job_description: str, resume_json: dict, job_analysis:
             }
         )
 
+def extract_job_text_from_url(job_url: str):
+    try:
+        response = requests.get(job_url, timeout=10)
+
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        for tag in soup(["script", "style"]):
+            tag.decompose()
+
+        text = soup.get_text(separator="\n")
+
+        cleaned_lines = [
+            line.strip()
+            for line in text.splitlines()
+            if line.strip()
+        ]
+
+        job_text = "\n".join(cleaned_lines)
+
+        return job_text[:8000]
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Could not extract job text from URL",
+                "message": str(error)
+            }
+        )
+
+
 @app.post("/analyze-job")
 def analyze_job(payload: JobRequest):
     resume_profile = json.dumps(payload.resume_json)
@@ -360,6 +399,12 @@ def cover_letter(payload: CoverLetterGenerationRequest):
         payload.job_analysis
     )
     return result
+
+@app.post("/extract-job")
+def extract_job(payload: JobUrlRequest):
+    job_text = extract_job_text_from_url(payload.job_url)
+
+    return JobUrlResponse(job_text=job_text)
 
 @app.get("/health")
 def health():
