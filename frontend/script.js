@@ -3,6 +3,7 @@ let storedJobDescription = "";
 let storedJobAnalysis = null;
 let storedTailoredResume = null;
 let storedCoverLetter = null;
+let savedApplications = [];
 
 function showStatusMessage(message) {
 
@@ -281,4 +282,76 @@ async function extractJobFromUrl() {
     } finally {
         document.getElementById("extractButton").disabled = false;
     }
+}
+
+function saveApplication() {
+
+    const applicationData = {
+        company:
+            storedJobAnalysis.core_fields.company,
+
+        role:
+            storedJobAnalysis.core_fields.job_title,
+
+        matchScore:
+            storedJobAnalysis.match_analysis.match_score,
+
+        priority:
+            storedJobAnalysis.decision.priority,
+
+        shouldApply:
+            storedJobAnalysis.decision.should_apply,
+
+        date:
+            new Date().toLocaleDateString()
+    };
+
+    savedApplications.push(applicationData);
+
+    localStorage.setItem(
+        "savedApplications",
+        JSON.stringify(savedApplications)
+    );
+
+    console.log(savedApplications);
+
+    showStatusMessage(
+        "Application saved successfully."
+    );
+
+    renderSavedApplications();
+}
+
+function renderSavedApplications() {
+    const list =
+        document.getElementById("savedApplicationsList");
+
+    list.innerHTML = "";
+
+    savedApplications.forEach(application => {
+        const item =
+            document.createElement("div");
+
+        item.className = "saved-application";
+
+        item.innerHTML = `
+            <strong>${application.company}</strong><br>
+            ${application.role}<br>
+            Match Score: ${application.matchScore}<br>
+            Priority: ${application.priority}<br>
+            Date: ${application.date}
+        `;
+
+        list.appendChild(item);
+    });
+}
+
+const storedApplications =
+    localStorage.getItem("savedApplications");
+
+if (storedApplications) {
+    savedApplications =
+        JSON.parse(storedApplications);
+
+    renderSavedApplications();
 }
