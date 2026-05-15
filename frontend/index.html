@@ -102,7 +102,96 @@
         </div>
         <div class="card">
             <h2>Saved Applications</h2>
-            <div id="savedApplicationsList"></div>
+
+            <div class="dashboard-stats">
+
+                <div class="stat-card">
+                    <h3>Total</h3>
+                    <p id="totalCount">0</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3>Applied</h3>
+                    <p id="appliedCount">0</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3>Interviews</h3>
+                    <p id="interviewCount">0</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3>Offers</h3>
+                    <p id="offerCount">0</p>
+                </div>
+
+            </div>
+
+            <select id="sortOption" onchange="renderSavedApplications()">
+
+                <option value="newest">Newest</option>
+
+                <option value="highestScore">
+                    Highest Match Score
+                </option>
+
+                <option value="lowestScore">
+                    Lowest Match Score
+                </option>
+
+            </select>
+
+            <select id="statusFilter" onchange="renderSavedApplications()">
+                <option value="All">All</option>
+                <option value="Saved">Saved</option>
+                <option value="Applied">Applied</option>
+                <option value="Interview">Interview</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Offer">Offer</option>
+                <option value="Accepted">Accepted</option>
+            </select>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Company</th>
+                        <th>Role</th>
+                        <th>Match Score</th>
+                        <th>Priority</th>
+                        <th>Should Apply</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody id="savedApplicationsList"></tbody>
+            </table>
+        </div>
+        <div class="card">
+
+            <h2>Promising Jobs</h2>
+            <button onclick="findJobs()">
+                Find Matching Jobs
+            </button>
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Job Title</th>
+                        <th>Company</th>
+                        <th>Location</th>
+                        <th>Reason</th>
+                        <th>Link</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody id="promisingJobsList"></tbody>
+
+            </table>
+
         </div>
     </div>
     <script src="script.js"></script>

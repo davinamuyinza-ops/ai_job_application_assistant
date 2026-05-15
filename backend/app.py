@@ -141,6 +141,20 @@ class JobUrlResponse(BaseModel):
     job_text: str
 
 
+class JobSearchRequest(BaseModel):
+    resume_json: dict
+
+class PromisingJob(BaseModel):
+    title: str
+    company: str
+    location: str
+    reason: str
+    link: str
+
+class JobSearchResponse(BaseModel):
+    jobs: list[PromisingJob]
+
+
 def clean_ai_json(raw_text: str) -> str:
     text = raw_text.strip()
 
@@ -405,6 +419,28 @@ def extract_job(payload: JobUrlRequest):
     job_text = extract_job_text_from_url(payload.job_url)
 
     return JobUrlResponse(job_text=job_text)
+
+@app.post("/search-jobs")
+def search_jobs(payload: JobSearchRequest):
+
+    jobs = [
+        {
+            "title": "Working Student AI Automation",
+            "company": "Example AI Company",
+            "location": "Remote",
+            "reason": "Matches AI workflow, JavaScript, Python, and automation experience.",
+            "link": "https://example.com/job1"
+        },
+        {
+            "title": "Werkstudent Software Testing",
+            "company": "Example Tech GmbH",
+            "location": "Düsseldorf",
+            "reason": "Matches QA, debugging, testing, and structured documentation experience.",
+            "link": "https://example.com/job2"
+        }
+    ]
+
+    return JobSearchResponse(jobs=jobs)
 
 @app.get("/health")
 def health():

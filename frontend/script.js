@@ -4,6 +4,7 @@ let storedJobAnalysis = null;
 let storedTailoredResume = null;
 let storedCoverLetter = null;
 let savedApplications = [];
+let promisingJobs = [];
 
 function showStatusMessage(message) {
 
@@ -44,24 +45,19 @@ async function analyzeJob() {
         const jobDescription =
             document.getElementById("jobDescription").value;
 
-        const fileInput =
-            document.getElementById("resumeUpload");
-
-        const file =
-            fileInput.files[0];
-
-        const fileText =
-            await file.text();
-
-        const resumeJson =
-            JSON.parse(fileText);
-
-        storedResumeJson = resumeJson;
+        
         storedJobDescription = jobDescription;
+
+        if (!storedResumeJson) {
+            document.getElementById("analysisResults").textContent =
+                "Please upload your resume first.";
+
+            return;
+        }
 
         const requestBody = {
             job_description: jobDescription,
-            resume_json: resumeJson
+            resume_json: storedResumeJson
         };
 
         console.log(requestBody);
@@ -287,6 +283,10 @@ async function extractJobFromUrl() {
 function saveApplication() {
 
     const applicationData = {
+
+        id: 
+            Date.now(),
+
         company:
             storedJobAnalysis.core_fields.company,
 
@@ -301,6 +301,8 @@ function saveApplication() {
 
         shouldApply:
             storedJobAnalysis.decision.should_apply,
+
+        status: "Saved",
 
         date:
             new Date().toLocaleDateString()
@@ -320,30 +322,110 @@ function saveApplication() {
     );
 
     renderSavedApplications();
+    updateDashboardStats();
 }
 
 function renderSavedApplications() {
+
     const list =
         document.getElementById("savedApplicationsList");
 
+    const selectedFilter =
+        document.getElementById("statusFilter").value;
+
+    const sortOption =
+    document.getElementById("sortOption").value;
+
     list.innerHTML = "";
 
-    savedApplications.forEach(application => {
-        const item =
-            document.createElement("div");
+    let filteredApplications =
+    [...savedApplications];
 
-        item.className = "saved-application";
+    if (sortOption === "highestScore") {
 
-        item.innerHTML = `
-            <strong>${application.company}</strong><br>
-            ${application.role}<br>
-            Match Score: ${application.matchScore}<br>
-            Priority: ${application.priority}<br>
-            Date: ${application.date}
+        filteredApplications.sort(
+            (a, b) => b.matchScore - a.matchScore
+        );
+
+    } else if (sortOption === "lowestScore") {
+
+        filteredApplications.sort(
+            (a, b) => a.matchScore - b.matchScore
+        );
+
+    } else {
+
+        filteredApplications.reverse();
+    }
+
+    filteredApplications.forEach((application, index) => {
+
+        if (
+            selectedFilter !== "All" &&
+            application.status !== selectedFilter
+        ) {
+            return;
+        }
+
+        const row =
+            document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${application.company}</td>
+            <td>${application.role}</td>
+            <td>${application.matchScore}</td>
+            <td>${application.priority}</td>
+            <td>${application.shouldApply}</td>
+
+            <td>
+                <select onchange="updateApplicationStatus(${application.id}, this.value)">
+                    <option value="Saved" ${application.status === "Saved" ? "selected" : ""}>Saved</option>
+
+                    <option value="Applied" ${application.status === "Applied" ? "selected" : ""}>Applied</option>
+
+                    <option value="Interview" ${application.status === "Interview" ? "selected" : ""}>Interview</option>
+
+                    <option value="Rejected" ${application.status === "Rejected" ? "selected" : ""}>Rejected</option>
+
+                    <option value="Offer" ${application.status === "Offer" ? "selected" : ""}>Offer</option>
+
+                    <option value="Accepted" ${application.status === "Accepted" ? "selected" : ""}>Accepted</option>
+                </select>
+            </td>
+
+            <td>${application.date}</td>
+
+            <td>
+                <button onclick="deleteApplication(${application.id})">
+                    Delete
+                </button>
+            </td>
         `;
 
-        list.appendChild(item);
+        list.appendChild(row);
     });
+}
+
+function updateApplicationStatus(id, newStatus) {
+
+    const application =
+        savedApplications.find(
+            app => app.id === id
+        );
+
+    if (application) {
+
+        application.status = newStatus;
+
+        localStorage.setItem(
+            "savedApplications",
+            JSON.stringify(savedApplications)
+        );
+
+        renderSavedApplications();
+
+        updateDashboardStats();
+    }
 }
 
 const storedApplications =
@@ -354,4 +436,222 @@ if (storedApplications) {
         JSON.parse(storedApplications);
 
     renderSavedApplications();
+    updateDashboardStats();
 }
+
+function deleteApplication(id) {
+
+    savedApplications =
+        savedApplications.filter(
+            app => app.id !== id
+        );
+
+    localStorage.setItem(
+        "savedApplications",
+        JSON.stringify(savedApplications)
+    );
+
+    renderSavedApplications();
+
+    updateDashboardStats();
+
+    showStatusMessage(
+        "Application deleted."
+    );
+}
+
+function updateDashboardStats() {
+
+    document.getElementById("totalCount").textContent =
+        savedApplications.length;
+
+    document.getElementById("appliedCount").textContent =
+        savedApplications.filter(
+            app => app.status === "Applied"
+        ).length;
+
+    document.getElementById("interviewCount").textContent =
+        savedApplications.filter(
+            app => app.status === "Interview"
+        ).length;
+
+    document.getElementById("offerCount").textContent =
+        savedApplications.filter(
+            app => app.status === "Offer"
+        ).length;
+}
+
+const storedResume =
+    localStorage.getItem("savedResume");
+
+if (storedResume) {
+
+    storedResumeJson =
+        JSON.parse(storedResume);
+
+    showStatusMessage(
+        "Saved resume loaded successfully."
+    );
+}
+
+function addTestPromisingJob() {
+
+    const job = {
+        title: "Working Student AI Automation",
+        company: "Example AI Company",
+        location: "Remote",
+        reason: "Matches AI, JavaScript, and automation skills.",
+        link: "https://example.com/job"
+    };
+
+    promisingJobs.push(job);
+
+    renderPromisingJobs();
+}
+
+function renderPromisingJobs() {
+
+    const list =
+        document.getElementById("promisingJobsList");
+
+    list.innerHTML = "";
+
+    promisingJobs.forEach((job, index) => {
+
+        const row =
+            document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${job.title}</td>
+
+            <td>${job.company}</td>
+
+            <td>${job.location}</td>
+
+            <td>${job.reason}</td>
+
+            <td>
+                <a href="${job.link}" target="_blank">
+                    Open
+                </a>
+            </td>
+
+            <td>
+                <button onclick="usePromisingJob(${index})">
+                    Use Job
+                </button>
+            </td>
+        `;
+
+        list.appendChild(row);
+    });
+}
+
+addTestPromisingJob();
+
+function usePromisingJob(index) {
+
+    const selectedJob =
+        promisingJobs[index];
+
+    document.getElementById("jobLink").value =
+        selectedJob.link;
+
+    showStatusMessage(
+        "Job link added successfully."
+    );
+}
+
+async function findJobs() {
+    try {
+        if (!storedResumeJson) {
+            document.getElementById("promisingJobsList").innerHTML =
+                `
+                <tr>
+                    <td colspan="6">
+                        Please upload your resume first.
+                    </td>
+                </tr>
+                `;
+
+            return;
+        }
+
+        document.getElementById("promisingJobsList").innerHTML =
+            `
+            <tr>
+                <td colspan="6">
+                    Searching for matching jobs...
+                </td>
+            </tr>
+            `;
+
+        const requestBody = {
+            resume_json: storedResumeJson
+        };
+
+        const response = await fetch("http://127.0.0.1:8000/search-jobs", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        const data = await response.json();
+
+        if (!data.jobs) {
+            console.log(data);
+
+            document.getElementById("promisingJobsList").innerHTML =
+                `
+                <tr>
+                    <td colspan="6">
+                        Backend did not return job results.
+                    </td>
+                </tr>
+                `;
+
+            return;
+        }
+
+promisingJobs = data.jobs;
+
+        renderPromisingJobs();
+
+        showStatusMessage("Matching jobs found successfully.");
+
+    } catch (error) {
+        console.log(error);
+
+        document.getElementById("promisingJobsList").innerHTML =
+            `
+            <tr>
+                <td colspan="6">
+                    Something went wrong while searching for jobs.
+                </td>
+            </tr>
+            `;
+    }
+}
+
+document.getElementById("resumeUpload").addEventListener("change", async function () {
+    const file = this.files[0];
+
+    if (!file) {
+        return;
+    }
+
+    const fileText = await file.text();
+
+    const resumeJson = JSON.parse(fileText);
+
+    storedResumeJson = resumeJson;
+
+    localStorage.setItem(
+        "savedResume",
+        JSON.stringify(resumeJson)
+    );
+
+    showStatusMessage("Resume uploaded and saved successfully.");
+});
