@@ -7,9 +7,16 @@ import json
 from prompts.analysis_prompt import build_analysis_prompt
 from prompts.resume_tailoring_prompt import build_resume_tailoring_prompt
 from prompts.cover_letter_prompt import build_cover_letter_generation_prompt
+from prompts.job_search_prompt import build_job_search_prompt
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 from bs4 import BeautifulSoup
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base
+from sqlalchemy import Column
+from sqlalchemy import Integer
+from sqlalchemy import String
 
 load_dotenv()
 
@@ -22,6 +29,46 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+DATABASE_URL = "sqlite:///applications.db"
+
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False}
+)
+
+SessionLocal = sessionmaker(
+    autoflush=False,
+    autocommit=False,
+    bind=engine
+)
+
+Base = declarative_base()
+
+class SavedApplication(Base):
+    __tablename__ = "applications"
+    id = Column(Integer, primary_key=True, index=True)
+    company = Column(String)
+    role = Column(String)
+    match_score = Column(Integer)
+    priority = Column(String)
+    should_apply = Column(String)
+    status = Column(String)
+    application_date = Column(String)
+    job_link = Column(String)
+
+Base.metadata.create_all(bind=engine)
+
+class SaveApplicationRequest(BaseModel):
+    company: str
+    role: str
+    match_score: int
+    priority: str
+    should_apply: str
+    status: str
+    application_date: str
+    job_link: str
+
 
 class JobRequest(BaseModel):
     job_description: str
@@ -153,6 +200,16 @@ class PromisingJob(BaseModel):
 
 class JobSearchResponse(BaseModel):
     jobs: list[PromisingJob]
+
+
+class SearchQueryRequest(BaseModel):
+    resume_json: dict
+
+class SearchQueryResponse(BaseModel):
+    search_queries: list[str]
+    target_roles: list[str]
+    strongest_keywords: list[str]
+    excluded_roles: list[str]
 
 
 def clean_ai_json(raw_text: str) -> str:
@@ -385,6 +442,127 @@ def extract_job_text_from_url(job_url: str):
             }
         )
 
+def generate_search_queries(resume_json: dict):
+    response = None
+    search_json = None
+
+    try:
+        response = client.responses.create(
+            model="gpt-4.1-mini",
+            input=[
+                {
+                    "role": "system",
+                    "content": build_job_search_prompt()
+                },
+                {
+                    "role": "user",
+                    "content": f"""
+                    Resume JSON:
+                    {json.dumps(resume_json)}
+                    """
+                }
+            ]
+        )
+
+        raw_output = response.output_text
+        cleaned_output = clean_ai_json(raw_output)
+        search_json = json.loads(cleaned_output)
+
+        validated_result = SearchQueryResponse.model_validate(search_json)
+        return validated_result
+
+    except json.JSONDecodeError as exc:
+        raw_output = response.output_text if response else "No response received"
+
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "AI returned invalid JSON",
+                "message": str(exc),
+                "raw_response": raw_output
+            }
+        )
+
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Search query response failed validation",
+                "message": exc.errors(),
+                "parsed_json": search_json
+            }
+        )
+
+def search_serper(query: str):
+    url = "https://google.serper.dev/search"
+
+    headers = {
+        "X-API-KEY": os.getenv("SERPER_API_KEY"),
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+    "q": f'{query} "working student" OR "werkstudent" "apply" "job" (site:boards.greenhouse.io OR site:jobs.lever.co OR site:jobs.personio.de)',
+    "num": 10
+    }
+
+    response = requests.post(
+        url,
+        headers=headers,
+        json=payload,
+        timeout=10
+    )
+
+    response.raise_for_status()
+
+    return response.json()
+
+def extract_jobs_from_results(results: dict):
+    jobs = []
+
+    organic_results = results.get("organic", [])
+
+    blocked_domains = [
+        "glassdoor",
+        "indeed",
+        "linkedin",
+        "simplyhired",
+        "jooble",
+        "jobsora"
+    ]
+
+    blocked_title_words = [
+    "careers",
+    "open positions",
+    "current job openings",
+    "jobs at",
+    "career opportunities"
+    ]
+
+    for item in organic_results:
+
+        link = item.get("link", "")
+
+        title = item.get("title", "")
+
+        if any(word in title.lower() for word in blocked_title_words):
+            continue
+
+        if any(domain in link.lower() for domain in blocked_domains):
+            continue
+
+        jobs.append(
+            {
+                "title": item.get("title", "Unknown Job"),
+                "company": "Unknown Company",
+                "location": "Unknown Location",
+                "reason": item.get("snippet", ""),
+                "link": link
+            }
+        )
+
+    return jobs
+
 
 @app.post("/analyze-job")
 def analyze_job(payload: JobRequest):
@@ -423,24 +601,111 @@ def extract_job(payload: JobUrlRequest):
 @app.post("/search-jobs")
 def search_jobs(payload: JobSearchRequest):
 
-    jobs = [
-        {
-            "title": "Working Student AI Automation",
-            "company": "Example AI Company",
-            "location": "Remote",
-            "reason": "Matches AI workflow, JavaScript, Python, and automation experience.",
-            "link": "https://example.com/job1"
-        },
-        {
-            "title": "Werkstudent Software Testing",
-            "company": "Example Tech GmbH",
-            "location": "Düsseldorf",
-            "reason": "Matches QA, debugging, testing, and structured documentation experience.",
-            "link": "https://example.com/job2"
-        }
-    ]
+    strategy = generate_search_queries(
+        payload.resume_json
+    )
 
-    return JobSearchResponse(jobs=jobs)
+    all_jobs = []
+
+    for query in strategy.search_queries[:3]:
+
+        try:
+            results = search_serper(query)
+
+            extracted_jobs = extract_jobs_from_results(
+                results
+            )
+
+            all_jobs.extend(extracted_jobs)
+
+        except Exception as exc:
+            print(f"Search failed for query: {query}")
+            print(exc)
+
+    return JobSearchResponse(
+        jobs=all_jobs
+    )
+
+@app.post("/generate-search-queries")
+def generate_queries(payload: SearchQueryRequest):
+    result = generate_search_queries(payload.resume_json)
+    return result
+
+@app.post("/save-application")
+def save_application(payload: SaveApplicationRequest):
+
+    db = SessionLocal()
+
+    saved_application = SavedApplication(
+        company=payload.company,
+        role=payload.role,
+        match_score=payload.match_score,
+        priority=payload.priority,
+        should_apply=payload.should_apply,
+        status=payload.status,
+        application_date=payload.application_date,
+        job_link=payload.job_link
+    )
+
+    db.add(saved_application)
+    db.commit()
+    db.refresh(saved_application)
+    db.close()
+
+    return {
+        "message": "Application saved successfully",
+        "id": saved_application.id
+    }
+
+@app.get("/applications")
+def get_applications():
+
+    db = SessionLocal()
+
+    applications = db.query(SavedApplication).all()
+
+    db.close()
+
+    return applications
+
+@app.delete("/applications/{application_id}")
+def delete_application(application_id: int):
+
+    db = SessionLocal()
+
+    application = db.query(SavedApplication).filter(
+        SavedApplication.id == application_id
+    ).first()
+
+    if application:
+
+        db.delete(application)
+        db.commit()
+
+    db.close()
+
+    return {
+        "message": "Application deleted"
+    }
+
+@app.put("/applications/{application_id}/status")
+def update_application_status_backend(application_id: int, status: str):
+
+    db = SessionLocal()
+
+    application = db.query(SavedApplication).filter(
+        SavedApplication.id == application_id
+    ).first()
+
+    if application:
+        application.status = status
+        db.commit()
+
+    db.close()
+
+    return {
+        "message": "Status updated"
+    }
 
 @app.get("/health")
 def health():

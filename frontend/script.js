@@ -280,12 +280,10 @@ async function extractJobFromUrl() {
     }
 }
 
-function saveApplication() {
+async function saveApplication() {
 
     const applicationData = {
-
-        id: 
-            Date.now(),
+        id: Date.now(),
 
         company:
             storedJobAnalysis.core_fields.company,
@@ -300,12 +298,15 @@ function saveApplication() {
             storedJobAnalysis.decision.priority,
 
         shouldApply:
-            storedJobAnalysis.decision.should_apply,
+            String(storedJobAnalysis.decision.should_apply),
 
         status: "Saved",
 
         date:
-            new Date().toLocaleDateString()
+            new Date().toLocaleDateString(),
+
+        jobLink:
+            document.getElementById("jobLink").value
     };
 
     savedApplications.push(applicationData);
@@ -315,7 +316,22 @@ function saveApplication() {
         JSON.stringify(savedApplications)
     );
 
-    console.log(savedApplications);
+    await fetch("http://127.0.0.1:8000/save-application", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            company: applicationData.company,
+            role: applicationData.role,
+            match_score: applicationData.matchScore,
+            priority: applicationData.priority,
+            should_apply: applicationData.shouldApply,
+            status: applicationData.status,
+            application_date: applicationData.date,
+            job_link: applicationData.jobLink
+        })
+    });
 
     showStatusMessage(
         "Application saved successfully."
@@ -406,7 +422,14 @@ function renderSavedApplications() {
     });
 }
 
-function updateApplicationStatus(id, newStatus) {
+async function updateApplicationStatus(id, newStatus) {
+
+    await fetch(
+        `http://127.0.0.1:8000/applications/${id}/status?status=${newStatus}`,
+        {
+            method: "PUT"
+        }
+    );
 
     const application =
         savedApplications.find(
@@ -414,18 +437,17 @@ function updateApplicationStatus(id, newStatus) {
         );
 
     if (application) {
-
         application.status = newStatus;
-
-        localStorage.setItem(
-            "savedApplications",
-            JSON.stringify(savedApplications)
-        );
-
-        renderSavedApplications();
-
-        updateDashboardStats();
     }
+
+    localStorage.setItem(
+        "savedApplications",
+        JSON.stringify(savedApplications)
+    );
+
+    renderSavedApplications();
+
+    updateDashboardStats();
 }
 
 const storedApplications =
@@ -439,7 +461,11 @@ if (storedApplications) {
     updateDashboardStats();
 }
 
-function deleteApplication(id) {
+async function deleteApplication(id) {
+
+    await fetch(`http://127.0.0.1:8000/applications/${id}`, {
+        method: "DELETE"
+    });
 
     savedApplications =
         savedApplications.filter(
@@ -494,21 +520,6 @@ if (storedResume) {
     );
 }
 
-function addTestPromisingJob() {
-
-    const job = {
-        title: "Working Student AI Automation",
-        company: "Example AI Company",
-        location: "Remote",
-        reason: "Matches AI, JavaScript, and automation skills.",
-        link: "https://example.com/job"
-    };
-
-    promisingJobs.push(job);
-
-    renderPromisingJobs();
-}
-
 function renderPromisingJobs() {
 
     const list =
@@ -546,8 +557,6 @@ function renderPromisingJobs() {
         list.appendChild(row);
     });
 }
-
-addTestPromisingJob();
 
 function usePromisingJob(index) {
 
@@ -655,3 +664,40 @@ document.getElementById("resumeUpload").addEventListener("change", async functio
 
     showStatusMessage("Resume uploaded and saved successfully.");
 });
+
+async function loadApplicationsFromBackend() {
+
+    try {
+
+        const response = await fetch(
+            "http://127.0.0.1:8000/applications"
+        );
+
+        const data = await response.json();
+
+        savedApplications = data.map(app => ({
+            id: app.id,
+            company: app.company,
+            role: app.role,
+            matchScore: app.match_score,
+            priority: app.priority,
+            shouldApply: app.should_apply,
+            status: app.status,
+            date: app.application_date,
+            jobLink: app.job_link
+        }));
+
+        renderSavedApplications();
+        updateDashboardStats();
+
+    } catch (error) {
+
+        console.log(error);
+
+        showStatusMessage(
+            "Failed to load applications from database."
+        );
+    }
+}
+
+loadApplicationsFromBackend();
