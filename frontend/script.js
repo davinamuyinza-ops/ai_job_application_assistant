@@ -6,6 +6,8 @@ let storedCoverLetter = null;
 let savedApplications = [];
 let promisingJobs = [];
 
+const API_BASE_URL = "http://127.0.0.1:8000";
+
 function showStatusMessage(message) {
 
     const status =
@@ -65,7 +67,7 @@ async function analyzeJob() {
         document.getElementById("analysisResults").textContent =
         "Analyzing job description...";
 
-        const response = await fetch("http://127.0.0.1:8000/analyze-job", {
+        const response = await fetch(`${API_BASE_URL}/analyze-job`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -121,7 +123,7 @@ async function generateResume() {
         "Generating tailored resume...";
 
         const response = await fetch(
-            "http://127.0.0.1:8000/tailor-resume",
+            `${API_BASE_URL}/tailor-resume`,
             {
                 method: "POST",
                 headers: {
@@ -167,7 +169,7 @@ async function generateCoverLetter() {
         "Generating cover letter...";
 
         const response = await fetch(
-            "http://127.0.0.1:8000/generate-cover-letter",
+            `${API_BASE_URL}/generate-cover-letter`,
             {
                 method: "POST",
                 headers: {
@@ -252,7 +254,7 @@ async function extractJobFromUrl() {
             job_url: jobUrl
         };
 
-        const response = await fetch("http://127.0.0.1:8000/extract-job", {
+        const response = await fetch(`${API_BASE_URL}/extract-job`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -316,7 +318,7 @@ async function saveApplication() {
         JSON.stringify(savedApplications)
     );
 
-    await fetch("http://127.0.0.1:8000/save-application", {
+    await fetch(`${API_BASE_URL}/save-application`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -425,7 +427,7 @@ function renderSavedApplications() {
 async function updateApplicationStatus(id, newStatus) {
 
     await fetch(
-        `http://127.0.0.1:8000/applications/${id}/status?status=${newStatus}`,
+        `${API_BASE_URL}/applications/${id}/status?status=${newStatus}`,
         {
             method: "PUT"
         }
@@ -463,7 +465,7 @@ if (storedApplications) {
 
 async function deleteApplication(id) {
 
-    await fetch(`http://127.0.0.1:8000/applications/${id}`, {
+    await fetch(`${API_BASE_URL}/applications/${id}`, {
         method: "DELETE"
     });
 
@@ -599,7 +601,7 @@ async function findJobs() {
             resume_json: storedResumeJson
         };
 
-        const response = await fetch("http://127.0.0.1:8000/search-jobs", {
+        const response = await fetch(`${API_BASE_URL}/search-jobs`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -670,7 +672,7 @@ async function loadApplicationsFromBackend() {
     try {
 
         const response = await fetch(
-            "http://127.0.0.1:8000/applications"
+            `${API_BASE_URL}/applications`
         );
 
         const data = await response.json();
