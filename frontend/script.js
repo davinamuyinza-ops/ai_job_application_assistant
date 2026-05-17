@@ -6,7 +6,7 @@ let storedCoverLetter = null;
 let savedApplications = [];
 let promisingJobs = [];
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+const API_BASE_URL = "https://ai-job-application-assistant-dy68.onrender.com";
 
 function showStatusMessage(message) {
 
