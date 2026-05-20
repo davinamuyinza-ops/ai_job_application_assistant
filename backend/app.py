@@ -17,12 +17,16 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import String
+from langdetect import detect_langs, DetectorFactory
+
+DetectorFactory.seed = 0
 
 load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 app = FastAPI(title="AI Job Application Assistant")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -50,8 +54,10 @@ SessionLocal = sessionmaker(
 
 Base = declarative_base()
 
+
 class SavedApplication(Base):
     __tablename__ = "applications"
+
     id = Column(Integer, primary_key=True, index=True)
     company = Column(String)
     role = Column(String)
@@ -62,7 +68,9 @@ class SavedApplication(Base):
     application_date = Column(String)
     job_link = Column(String)
 
+
 Base.metadata.create_all(bind=engine)
+
 
 class SaveApplicationRequest(BaseModel):
     company: str
@@ -78,6 +86,7 @@ class SaveApplicationRequest(BaseModel):
 class JobRequest(BaseModel):
     job_description: str
     resume_json: dict
+
 
 class CoreFields(BaseModel):
     job_title: str
@@ -97,6 +106,7 @@ class CoreFields(BaseModel):
     summary: str
     recommendation: str
 
+
 class MatchAnalysis(BaseModel):
     match_score: int
     strong_matches: list[str]
@@ -105,11 +115,13 @@ class MatchAnalysis(BaseModel):
     risk_factors: list[str]
     application_recommendation: str
 
+
 class Decision(BaseModel):
     should_apply: bool
     priority: str
     confidence: int
     reason: str
+
 
 class CVTailoringPlan(BaseModel):
     recommended_cv_title: str
@@ -120,6 +132,7 @@ class CVTailoringPlan(BaseModel):
     keywords_to_include: list[str]
     sections_to_adjust: list[str]
     tailoring_strategy: str
+
 
 class CoverLetterPlan(BaseModel):
     tone: str
@@ -132,6 +145,7 @@ class CoverLetterPlan(BaseModel):
     suggested_closing_focus: str
     things_to_avoid: list[str]
 
+
 class RiskGapAnalysis(BaseModel):
     major_gaps: list[str]
     minor_gaps: list[str]
@@ -140,6 +154,7 @@ class RiskGapAnalysis(BaseModel):
     interview_preparation_topics: list[str]
     estimated_competitiveness: str
     overall_risk_level: str
+
 
 class WorkflowRecommendations(BaseModel):
     next_actions: list[str]
@@ -150,6 +165,7 @@ class WorkflowRecommendations(BaseModel):
     estimated_application_effort: str
     networking_suggestions: list[str]
     deadline_awareness: str
+
 
 class JobAnalysisResponse(BaseModel):
     core_fields: CoreFields
@@ -162,11 +178,11 @@ class JobAnalysisResponse(BaseModel):
     workflow_recommendations: WorkflowRecommendations
 
 
-
 class ResumeTailoringRequest(BaseModel):
     job_description: str
     resume_json: dict
     job_analysis: dict
+
 
 class ResumeTailoringResponse(BaseModel):
     tailored_resume_json: dict
@@ -180,6 +196,7 @@ class CoverLetterGenerationRequest(BaseModel):
     resume_json: dict
     job_analysis: dict
 
+
 class CoverLetterGenerationResponse(BaseModel):
     cover_letter: str
     key_points_used: list[str]
@@ -189,12 +206,14 @@ class CoverLetterGenerationResponse(BaseModel):
 class JobUrlRequest(BaseModel):
     job_url: str
 
+
 class JobUrlResponse(BaseModel):
     job_text: str
 
 
 class JobSearchRequest(BaseModel):
     resume_json: dict
+
 
 class PromisingJob(BaseModel):
     title: str
@@ -203,6 +222,7 @@ class PromisingJob(BaseModel):
     reason: str
     link: str
 
+
 class JobSearchResponse(BaseModel):
     jobs: list[PromisingJob]
 
@@ -210,12 +230,125 @@ class JobSearchResponse(BaseModel):
 class SearchQueryRequest(BaseModel):
     resume_json: dict
 
+
 class SearchQueryResponse(BaseModel):
     search_queries: list[str]
     target_roles: list[str]
     strongest_keywords: list[str]
     excluded_roles: list[str]
 
+
+def detect_target_language(job_description: str) -> str:
+    text = job_description.strip()
+
+    if not text:
+        return "English"
+
+    try:
+        detected_languages = detect_langs(text)
+
+        print("Language detection result:", detected_languages)
+
+        german_probability = 0
+        english_probability = 0
+
+        for language in detected_languages:
+            if language.lang == "de":
+                german_probability = language.prob
+
+            if language.lang == "en":
+                english_probability = language.prob
+
+        if german_probability >= 0.25:
+            return "German"
+
+        if english_probability >= 0.50:
+            return "English"
+
+        return "English"
+
+    except Exception as error:
+        print("Language detection failed:", error)
+        return "English"
+
+
+def build_language_lock(target_language: str, document_type: str) -> str:
+    return f"""
+    ABSOLUTE LANGUAGE ENFORCEMENT:
+
+    TARGET_LANGUAGE = {target_language}
+
+    The final {document_type} MUST be written completely in {target_language}.
+
+    The language of:
+    - resume_json
+    - job_analysis
+    - original resume
+    - previous outputs
+
+    is NOT authoritative.
+
+    Only the job description language is authoritative.
+
+    IMPORTANT:
+
+    The job_analysis may contain English even when the target language is German.
+    Ignore the language of the job_analysis.
+    Use only its meaning and factual information.
+
+    The resume_json may contain English.
+    Ignore its language.
+    Use only its factual information.
+
+    You MUST rewrite all visible recruiter-facing content into {target_language}.
+
+    This includes:
+    - summaries
+    - headlines
+    - section titles
+    - descriptions
+    - bullet points
+    - project descriptions
+    - education descriptions
+    - skills categories
+    - recommendations
+    - explanations
+
+    Keep JSON keys unchanged.
+    Translate JSON values only.
+
+    If TARGET_LANGUAGE is German:
+    - all recruiter-facing text must be German
+    - do not leave English bullet points
+    - do not leave English summaries
+    - do not leave English section titles
+
+    If TARGET_LANGUAGE is English:
+    - all recruiter-facing text must be English
+    - do not leave German bullet points
+    - do not leave German summaries
+    - do not leave German section titles
+
+    Allowed unchanged technical terms:
+    - Python
+    - JavaScript
+    - React
+    - FastAPI
+    - REST API
+    - Git
+    - GitHub
+    - SQL
+    - HTML
+    - CSS
+    - Jira
+
+    Mixed-language output is invalid.
+
+    Before returning the JSON:
+    check every visible value and rewrite it into {target_language}.
+
+    Return only valid JSON.
+    """
 
 def clean_ai_json(raw_text: str) -> str:
     text = raw_text.strip()
@@ -231,20 +364,60 @@ def clean_ai_json(raw_text: str) -> str:
 
     return text
 
+
 def run_full_job_analysis(job_description: str, user_profile: str):
     response = None
     ai_json = None
+
+    target_language = detect_target_language(job_description)
+    print("Analysis target language:", target_language)
+
     try:
         response = client.responses.create(
             model="gpt-4.1-mini",
+            temperature=0,
             input=[
                 {
                     "role": "system",
                     "content": build_analysis_prompt()
                 },
                 {
+                    "role": "developer",
+                    "content": f"""
+                        TARGET LANGUAGE: {target_language}
+
+                        You must write ALL generated JSON values in {target_language}.
+
+                        The job description language is authoritative.
+
+                        Do not answer in English unless TARGET LANGUAGE is English.
+
+                        If TARGET LANGUAGE is German:
+                        - all summaries must be German
+                        - all recommendations must be German
+                        - all strengths must be German
+                        - all gaps must be German
+                        - all risks must be German
+                        - all workflow recommendations must be German
+                        - all CV tailoring plan values must be German
+                        - all cover letter plan values must be German
+
+                        JSON keys must stay unchanged.
+                        Only JSON values are translated.
+
+                        Return only valid JSON.
+                        """
+                },
+                {
                     "role": "user",
-                    "content": f"Description: {job_description}\nProfile: {user_profile}"
+                    "content": json.dumps(
+                        {
+                            "target_language": target_language,
+                            "job_description": job_description,
+                            "profile": user_profile
+                        },
+                        ensure_ascii=False
+                    )
                 }
             ]
         )
@@ -252,6 +425,7 @@ def run_full_job_analysis(job_description: str, user_profile: str):
         raw_output = response.output_text
         cleaned_output = clean_ai_json(raw_output)
         ai_json = json.loads(cleaned_output)
+
         validated_result = JobAnalysisResponse.model_validate(ai_json)
         return validated_result
 
@@ -286,38 +460,44 @@ def run_full_job_analysis(job_description: str, user_profile: str):
             }
         )
 
+
 def tailor_resume_json(job_description: str, resume_json: dict, job_analysis: dict):
     response = None
     tailored_json = None
 
+    target_language = detect_target_language(job_description)
+    print("Resume target language:", target_language)
+
     try:
         response = client.responses.create(
             model="gpt-4.1-mini",
+            temperature=0,
             input=[
                 {
                     "role": "system",
                     "content": build_resume_tailoring_prompt()
                 },
                 {
+                    "role": "developer",
+                    "content": build_language_lock(target_language, "tailored resume")
+                },
+                {
                     "role": "user",
-                    "content": f"""
-                        Job Description:
-                        {job_description}
-
-                        Deep Job Analysis:
-                        {json.dumps(job_analysis)}
-
-                        Reactive Resume JSON:
-                        {json.dumps(resume_json)}
-                    """
+                    "content": json.dumps(
+                        {
+                            "target_language": target_language,
+                            "job_description": job_description,
+                            "job_analysis": job_analysis,
+                            "resume_json": resume_json
+                        },
+                        ensure_ascii=False
+                    )
                 }
             ]
         )
 
         raw_output = response.output_text
-
         cleaned_output = clean_ai_json(raw_output)
-
         tailored_json = json.loads(cleaned_output)
 
         validated_result = ResumeTailoringResponse.model_validate(tailored_json)
@@ -335,6 +515,16 @@ def tailor_resume_json(job_description: str, resume_json: dict, job_analysis: di
             }
         )
 
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "AI response failed validation",
+                "message": exc.errors(),
+                "parsed_json": tailored_json
+            }
+        )
+
     except Exception as error:
         raise HTTPException(
             status_code=500,
@@ -344,37 +534,43 @@ def tailor_resume_json(job_description: str, resume_json: dict, job_analysis: di
             }
         )
 
+
 def generate_cover_letter(job_description: str, resume_json: dict, job_analysis: dict):
     response = None
     cover_letter_json = None
 
+    target_language = detect_target_language(job_description)
+    print("Cover letter target language:", target_language)
+
     try:
         response = client.responses.create(
             model="gpt-4.1-mini",
+            temperature=0,
             input=[
                 {
                     "role": "system",
                     "content": build_cover_letter_generation_prompt()
                 },
                 {
+                    "role": "developer",
+                    "content": build_language_lock(target_language, "cover letter")
+                },
+                {
                     "role": "user",
-                    "content": f"""
-                        Job Description:
-                        {job_description}
-
-                        Resume JSON:
-                        {json.dumps(resume_json)}
-
-                        Deep Job Analysis:
-                        {json.dumps(job_analysis)}
-
-                        Return ONLY valid JSON with this structure:
-                        {{
-                        "cover_letter": "",
-                        "key_points_used": [],
-                        "tone_used": ""
-                        }}
-                    """
+                    "content": json.dumps(
+                        {
+                            "target_language": target_language,
+                            "job_description": job_description,
+                            "resume_json": resume_json,
+                            "job_analysis": job_analysis,
+                            "required_output_structure": {
+                                "cover_letter": "",
+                                "key_points_used": [],
+                                "tone_used": ""
+                            }
+                        },
+                        ensure_ascii=False
+                    )
                 }
             ]
         )
@@ -417,10 +613,10 @@ def generate_cover_letter(job_description: str, resume_json: dict, job_analysis:
             }
         )
 
+
 def extract_job_text_from_url(job_url: str):
     try:
         response = requests.get(job_url, timeout=10)
-
         soup = BeautifulSoup(response.text, "html.parser")
 
         for tag in soup(["script", "style"]):
@@ -447,6 +643,7 @@ def extract_job_text_from_url(job_url: str):
             }
         )
 
+
 def generate_search_queries(resume_json: dict):
     response = None
     search_json = None
@@ -454,6 +651,7 @@ def generate_search_queries(resume_json: dict):
     try:
         response = client.responses.create(
             model="gpt-4.1-mini",
+            temperature=0,
             input=[
                 {
                     "role": "system",
@@ -461,10 +659,12 @@ def generate_search_queries(resume_json: dict):
                 },
                 {
                     "role": "user",
-                    "content": f"""
-                    Resume JSON:
-                    {json.dumps(resume_json)}
-                    """
+                    "content": json.dumps(
+                        {
+                            "resume_json": resume_json
+                        },
+                        ensure_ascii=False
+                    )
                 }
             ]
         )
@@ -498,6 +698,7 @@ def generate_search_queries(resume_json: dict):
             }
         )
 
+
 def search_serper(query: str):
     url = "https://google.serper.dev/search"
 
@@ -507,8 +708,8 @@ def search_serper(query: str):
     }
 
     payload = {
-    "q": f'{query} "working student" OR "werkstudent" "apply" "job" (site:boards.greenhouse.io OR site:jobs.lever.co OR site:jobs.personio.de)',
-    "num": 10
+        "q": f'{query} "working student" OR "werkstudent" "apply" "job" (site:boards.greenhouse.io OR site:jobs.lever.co OR site:jobs.personio.de)',
+        "num": 10
     }
 
     response = requests.post(
@@ -521,6 +722,7 @@ def search_serper(query: str):
     response.raise_for_status()
 
     return response.json()
+
 
 def extract_jobs_from_results(results: dict):
     jobs = []
@@ -537,17 +739,15 @@ def extract_jobs_from_results(results: dict):
     ]
 
     blocked_title_words = [
-    "careers",
-    "open positions",
-    "current job openings",
-    "jobs at",
-    "career opportunities"
+        "careers",
+        "open positions",
+        "current job openings",
+        "jobs at",
+        "career opportunities"
     ]
 
     for item in organic_results:
-
         link = item.get("link", "")
-
         title = item.get("title", "")
 
         if any(word in title.lower() for word in blocked_title_words):
@@ -571,13 +771,15 @@ def extract_jobs_from_results(results: dict):
 
 @app.post("/analyze-job")
 def analyze_job(payload: JobRequest):
-    resume_profile = json.dumps(payload.resume_json)
+    resume_profile = json.dumps(payload.resume_json, ensure_ascii=False)
 
     ai_result = run_full_job_analysis(
         payload.job_description,
         resume_profile
     )
+
     return ai_result
+
 
 @app.post("/tailor-resume")
 def tailor_resume(payload: ResumeTailoringRequest):
@@ -586,7 +788,9 @@ def tailor_resume(payload: ResumeTailoringRequest):
         payload.resume_json,
         payload.job_analysis
     )
+
     return result
+
 
 @app.post("/generate-cover-letter")
 def cover_letter(payload: CoverLetterGenerationRequest):
@@ -595,7 +799,9 @@ def cover_letter(payload: CoverLetterGenerationRequest):
         payload.resume_json,
         payload.job_analysis
     )
+
     return result
+
 
 @app.post("/extract-job")
 def extract_job(payload: JobUrlRequest):
@@ -603,42 +809,35 @@ def extract_job(payload: JobUrlRequest):
 
     return JobUrlResponse(job_text=job_text)
 
+
 @app.post("/search-jobs")
 def search_jobs(payload: JobSearchRequest):
-
-    strategy = generate_search_queries(
-        payload.resume_json
-    )
+    strategy = generate_search_queries(payload.resume_json)
 
     all_jobs = []
 
     for query in strategy.search_queries[:3]:
-
         try:
             results = search_serper(query)
-
-            extracted_jobs = extract_jobs_from_results(
-                results
-            )
-
+            extracted_jobs = extract_jobs_from_results(results)
             all_jobs.extend(extracted_jobs)
 
         except Exception as exc:
             print(f"Search failed for query: {query}")
             print(exc)
 
-    return JobSearchResponse(
-        jobs=all_jobs
-    )
+    return JobSearchResponse(jobs=all_jobs)
+
 
 @app.post("/generate-search-queries")
 def generate_queries(payload: SearchQueryRequest):
     result = generate_search_queries(payload.resume_json)
+
     return result
+
 
 @app.post("/save-application")
 def save_application(payload: SaveApplicationRequest):
-
     db = SessionLocal()
 
     saved_application = SavedApplication(
@@ -662,9 +861,9 @@ def save_application(payload: SaveApplicationRequest):
         "id": saved_application.id
     }
 
+
 @app.get("/applications")
 def get_applications():
-
     db = SessionLocal()
 
     applications = db.query(SavedApplication).all()
@@ -673,9 +872,9 @@ def get_applications():
 
     return applications
 
+
 @app.delete("/applications/{application_id}")
 def delete_application(application_id: int):
-
     db = SessionLocal()
 
     application = db.query(SavedApplication).filter(
@@ -683,7 +882,6 @@ def delete_application(application_id: int):
     ).first()
 
     if application:
-
         db.delete(application)
         db.commit()
 
@@ -693,9 +891,9 @@ def delete_application(application_id: int):
         "message": "Application deleted"
     }
 
+
 @app.put("/applications/{application_id}/status")
 def update_application_status_backend(application_id: int, status: str):
-
     db = SessionLocal()
 
     application = db.query(SavedApplication).filter(
@@ -712,6 +910,7 @@ def update_application_status_backend(application_id: int, status: str):
         "message": "Status updated"
     }
 
+
 @app.get("/health")
 def health():
-    return {"status" : "ok"}
+    return {"status": "ok"}

@@ -8,192 +8,371 @@
 </head>
 
 <body>
-    <div class = "container">
 
-        <h1>AI Job Application Assistant</h1>
+    <div class="app-layout">
 
-        <div class="workflow-steps">
-
-            <div id="step1" class="step active">
-                1. Upload Resume
+        <aside class="sidebar">
+            <div class="logo-area">
+                <h2>AI Apply</h2>
             </div>
 
-            <div id="step2" class="step">
-                2. Analyze Job
-            </div>
-
-            <div id="step3" class="step">
-                3. Generate Resume
-            </div>
-
-            <div id="step4" class="step">
-                4. Generate Cover Letter
-            </div>
-
-        </div>
-
-        <div id="statusMessage"></div>
-
-        <div class="card">
-            <h2>Upload Resume JSON</h2>
-
-            <input 
-                type="file" 
-                id="resumeUpload" 
-                accept=".json"
-            >
-            <h2>Job Description</h2>
-
-            <textarea
-                id="jobDescription"
-                placeholder="Paste the job description here..."
-                rows="15"
-                cols="80"
-            ></textarea>
-
-            <h2>Job Link</h2>
-
-            <input
-                type="text"
-                id="jobLink"
-                placeholder="Paste job link here..."
-            >
-            <button id="extractButton" onclick="extractJobFromUrl()">
-                Extract Job Description
-            </button>
-
-            <button id="analyzeButton" onclick="analyzeJob()">
-                Analyze Job
-            </button>
-        </div>
-        <div class = "workflow-grid">
-            <div class="card">
-                <h2>Analysis Results</h2>
-                <pre id="analysisResults"></pre>
-
-                <button id="resumeButton" onclick="generateResume()">
-                    Generate Tailored Resume
+            <nav class="sidebar-nav">
+                <button class="nav-button active"
+                        data-view="dashboardView"
+                        onclick="goToView('dashboardView')">
+                    Dashboard
                 </button>
-                
-                <button id="coverLetterButton" onclick="generateCoverLetter()">
-                    Generate Cover Letter
+                <button class="nav-button"
+                        data-view="resumeView"
+                        onclick="goToView('resumeView')">
+                    Resume & Job
                 </button>
 
-                <button onclick="saveApplication()">
-                    Save Application
+                <button class="nav-button"
+                        data-view="analysisView"
+                        onclick="goToView('analysisView')">
+                    Analysis
                 </button>
-            </div>
-            <div class="card">
-                <h2>Tailored Resume</h2>
-                <pre id="resumeResults"></pre>
 
-                <button onclick="downloadResumeJson()">
-                        Download Tailored Resume JSON
+                <button class="nav-button"
+                        data-view="documentsView"
+                        onclick="goToView('documentsView')">
+                    Documents
                 </button>
-            </div>
-            <div class="card">
-                <h2>Cover Letter</h2>
-                <pre id="coverLetterResults"></pre>
 
-                <button onclick="copyCoverLetter()">
-                    Copy Cover Letter
+                <button class="nav-button"
+                        data-view="applicationsView"
+                        onclick="goToView('applicationsView')">
+                    Applications
                 </button>
-            </div>
-        </div>
-        <div class="card">
-            <h2>Saved Applications</h2>
 
-            <div class="dashboard-stats">
+                <button class="nav-button"
+                        data-view="jobsView"
+                        onclick="goToView('jobsView')">
+                    Promising Jobs
+                </button>
+            </nav>
+        </aside>
 
-                <div class="stat-card">
-                    <h3>Total</h3>
-                    <p id="totalCount">0</p>
+        <main class="main-content">
+
+            <header class="top-header">
+                <h1>AI Job Application Assistant</h1>
+                <p>Analyze jobs, tailor resumes, generate cover letters, and track applications.</p>
+            </header>
+
+            <div id="statusMessage"></div>
+
+            <section id="dashboardView" class="view-section active-view">
+               <div class="hero-card">
+                    <div>
+                        <h1>Welcome Back</h1>
+                        <p>
+                            Manage your AI-powered job applications,
+                            tailored resumes, and application tracking.
+                        </p>
+                    </div>
+
+                    <button onclick="showView('jobsView', document.querySelectorAll('.nav-button')[5])">
+                        Find Jobs
+                    </button>
                 </div>
 
-                <div class="stat-card">
-                    <h3>Applied</h3>
-                    <p id="appliedCount">0</p>
+                <div class="dashboard-overview">
+
+                    <div class="overview-card">
+                        <h3>Total Applications</h3>
+                        <p id="dashboardTotalCount">0</p>
+                    </div>
+
+                    <div class="overview-card">
+                        <h3>Applied</h3>
+                        <p id="dashboardAppliedCount">0</p>
+                    </div>
+
+                    <div class="overview-card">
+                        <h3>Interviews</h3>
+                        <p id="dashboardInterviewCount">0</p>
+                    </div>
+
+                    <div class="overview-card">
+                        <h3>Offers</h3>
+                        <p id="dashboardOfferCount">0</p>
+                    </div>
+
                 </div>
 
-                <div class="stat-card">
-                    <h3>Interviews</h3>
-                    <p id="interviewCount">0</p>
+                <div class="quick-actions-card">
+
+                    <h2>Quick Actions</h2>
+
+                    <div class="quick-actions">
+
+                        <button onclick="showView('resumeView', document.querySelectorAll('.nav-button')[1])">
+                            Upload Resume
+                        </button>
+
+                        <button onclick="showView('analysisView', document.querySelectorAll('.nav-button')[2])">
+                            Analyze Job
+                        </button>
+
+                        <button onclick="showView('jobsView', document.querySelectorAll('.nav-button')[5])">
+                            Find Jobs
+                        </button>
+
+                    </div>
+
                 </div>
+            </section>
 
-                <div class="stat-card">
-                    <h3>Offers</h3>
-                    <p id="offerCount">0</p>
+            <section id="resumeView" class="view-section">
+                <div class="resume-job-grid">
+
+                    <div class="card">
+
+                        <h2>Upload Resume</h2>
+
+                        <p class="section-description">
+                            Upload your master resume JSON for AI analysis and tailoring.
+                        </p>
+
+                        <input 
+                            type="file" 
+                            id="resumeUpload" 
+                            accept=".json"
+                        >
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <h2>Job Input</h2>
+
+                        <p class="section-description">
+                            Paste a job description or extract directly from a job URL.
+                        </p>
+
+                        <input
+                            type="text"
+                            id="jobLink"
+                            placeholder="Paste job link here..."
+                        >
+
+                        <button id="extractButton"
+                                onclick="extractJobFromUrl()">
+                            Extract Job Description
+                        </button>
+
+                        <textarea
+                            id="jobDescription"
+                            placeholder="Paste the job description here..."
+                        ></textarea>
+
+                        <button id="analyzeButton"
+                                onclick="analyzeJob()">
+                            Analyze Job
+                        </button>
+
+                    </div>
+
                 </div>
+            </section>
 
-            </div>
+            <section id="analysisView" class="view-section">
+                <div class="card">
+                    <h2>Analysis Results</h2>
 
-            <select id="sortOption" onchange="renderSavedApplications()">
+                    <div id="analysisResults"></div>
 
-                <option value="newest">Newest</option>
+                    <button id="resumeButton" onclick="generateResume()">
+                        Generate Tailored Resume
+                    </button>
+                    
+                    <button id="coverLetterButton" onclick="generateCoverLetter()">
+                        Generate Cover Letter
+                    </button>
 
-                <option value="highestScore">
-                    Highest Match Score
-                </option>
+                    <button onclick="saveApplication()">
+                        Save Application
+                    </button>
+                </div>
+            </section>
 
-                <option value="lowestScore">
-                    Lowest Match Score
-                </option>
+            <section id="documentsView" class="view-section">
+                <div class="documents-grid">
 
-            </select>
+                    <div class="document-card">
 
-            <select id="statusFilter" onchange="renderSavedApplications()">
-                <option value="All">All</option>
-                <option value="Saved">Saved</option>
-                <option value="Applied">Applied</option>
-                <option value="Interview">Interview</option>
-                <option value="Rejected">Rejected</option>
-                <option value="Offer">Offer</option>
-                <option value="Accepted">Accepted</option>
-            </select>
+                        <div class="document-header">
+                            <div>
+                                <h2>Tailored Resume</h2>
+                                <p>
+                                    AI-optimized resume generated for the selected job.
+                                </p>
+                            </div>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Company</th>
-                        <th>Role</th>
-                        <th>Match Score</th>
-                        <th>Priority</th>
-                        <th>Should Apply</th>
-                        <th>Status</th>
-                        <th>Date</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
+                            <button onclick="downloadResumeJson()">
+                                Download JSON
+                            </button>
+                        </div>
 
-                <tbody id="savedApplicationsList"></tbody>
-            </table>
-        </div>
-        <div class="card">
+                        <div class="document-preview">
+                            <pre id="resumeResults"></pre>
+                        </div>
 
-            <h2>Promising Jobs</h2>
-            <button onclick="findJobs()">
-                Find Matching Jobs
-            </button>
+                    </div>
 
-            <table>
 
-                <thead>
-                    <tr>
-                        <th>Job Title</th>
-                        <th>Company</th>
-                        <th>Location</th>
-                        <th>Reason</th>
-                        <th>Link</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
+                    <div class="document-card">
 
-                <tbody id="promisingJobsList"></tbody>
+                        <div class="document-header">
+                            <div>
+                                <h2>Cover Letter</h2>
+                                <p>
+                                    AI-generated personalized cover letter.
+                                </p>
+                            </div>
 
-            </table>
+                            <button onclick="copyCoverLetter()">
+                                Copy Letter
+                            </button>
+                        </div>
 
-        </div>
+                        <div class="document-preview">
+                            <pre id="coverLetterResults"></pre>
+                        </div>
+
+                    </div>
+
+                </div>
+            </section>
+
+            <section id="applicationsView" class="view-section">
+                <div class="card">
+                    <h2>Saved Applications</h2>
+
+                    <div class="dashboard-stats">
+
+                        <div class="stat-card">
+                            <h3>Total</h3>
+                            <p id="totalCount">0</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <h3>Applied</h3>
+                            <p id="appliedCount">0</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <h3>Interviews</h3>
+                            <p id="interviewCount">0</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <h3>Offers</h3>
+                            <p id="offerCount">0</p>
+                        </div>
+
+                    </div>
+
+                    <div class="applications-toolbar">
+
+                        <div class="toolbar-left">
+
+                            <h2>Application Tracker</h2>
+
+                            <p>
+                                Track your applications, interviews,
+                                and offers in one place.
+                            </p>
+
+                        </div>
+
+                        <div class="toolbar-right">
+
+                            <select id="sortOption"
+                                    onchange="renderSavedApplications()">
+
+                                <option value="newest">
+                                    Newest
+                                </option>
+
+                                <option value="highestScore">
+                                    Highest Match Score
+                                </option>
+
+                                <option value="lowestScore">
+                                    Lowest Match Score
+                                </option>
+
+                            </select>
+
+                            <select id="statusFilter"
+                                    onchange="renderSavedApplications()">
+
+                                <option value="All">All</option>
+                                <option value="Saved">Saved</option>
+                                <option value="Applied">Applied</option>
+                                <option value="Interview">Interview</option>
+                                <option value="Rejected">Rejected</option>
+                                <option value="Offer">Offer</option>
+                                <option value="Accepted">Accepted</option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Company</th>
+                                <th>Role</th>
+                                <th>Match Score</th>
+                                <th>Priority</th>
+                                <th>Should Apply</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="savedApplicationsList"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="jobsView" class="view-section">
+                <div class="card">
+                    <h2>Promising Jobs</h2>
+
+                    <button onclick="findJobs()">
+                        Find Matching Jobs
+                    </button>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Job Title</th>
+                                <th>Company</th>
+                                <th>Location</th>
+                                <th>Reason</th>
+                                <th>Link</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="promisingJobsList"></tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>

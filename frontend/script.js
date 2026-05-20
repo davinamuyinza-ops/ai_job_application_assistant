@@ -27,16 +27,26 @@ function setStep(stepNumber) {
     const steps =
         document.querySelectorAll(".step");
 
+    if (!steps.length) {
+        return;
+    }
+
     steps.forEach(step => {
         step.classList.remove("active");
         step.classList.remove("completed");
     });
 
     for (let i = 0; i < stepNumber - 1; i++) {
-        steps[i].classList.add("completed");
+
+        if (steps[i]) {
+            steps[i].classList.add("completed");
+        }
     }
 
-    steps[stepNumber - 1].classList.add("active");
+    if (steps[stepNumber - 1]) {
+        steps[stepNumber - 1]
+            .classList.add("active");
+    }
 }
 
 async function analyzeJob() {
@@ -67,6 +77,10 @@ async function analyzeJob() {
         document.getElementById("analysisResults").textContent =
         "Analyzing job description...";
 
+        goToView("analysisView");
+
+        setStep(2);
+
         const response = await fetch(`${API_BASE_URL}/analyze-job`, {
             method: "POST",
             headers: {
@@ -80,20 +94,38 @@ async function analyzeJob() {
         storedJobAnalysis = data;
         
         // JSON.stringify(data, null, 2) formats the JSON data with indentation for better readability
-        document.getElementById("analysisResults").textContent =
-        `
-            Match Score: ${data.match_analysis.match_score}
+        document.getElementById("analysisResults").innerHTML =
+            `
+                <div class="analysis-dashboard">
 
-            Application Priority: ${data.decision.priority}
+                    <div class="score-circle">
+                        <span>${data.match_analysis.match_score}%</span>
+                        <p>Match Score</p>
+                    </div>
 
-            Should Apply: ${data.decision.should_apply}
+                    <div class="analysis-info-card">
+                        <h3>Priority</h3>
+                        <p>${data.decision.priority}</p>
+                    </div>
 
-            Confidence: ${data.decision.confidence}%
+                    <div class="analysis-info-card">
+                        <h3>Should Apply</h3>
+                        <p>${data.decision.should_apply}</p>
+                    </div>
 
-            Main Reason:${data.decision.reason}
-        `;
+                    <div class="analysis-info-card">
+                        <h3>Confidence</h3>
+                        <p>${data.decision.confidence}%</p>
+                    </div>
 
-        setStep(2);
+                    <div class="analysis-reason">
+                        <h3>Main Reason</h3>
+                        <p>${data.decision.reason}</p>
+                    </div>
+
+                </div>
+            `;
+
     
     } catch (error) {
         console.log(error);
@@ -119,8 +151,17 @@ async function generateResume() {
 
         console.log(requestBody);
 
-        document.getElementById("resumeResults").textContent =
-        "Generating tailored resume...";
+        document.getElementById("resumeResults").innerHTML =
+            `
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                Generating tailored resume...
+            </div>
+            `;
+
+        goToView("documentsView");
+
+        setStep(3);
 
         const response = await fetch(
             `${API_BASE_URL}/tailor-resume`,
@@ -141,7 +182,7 @@ async function generateResume() {
         document.getElementById("resumeResults").textContent =
             "Tailored resume generated successfully. Ready for download.";
 
-        setStep(3);
+        
 
     } catch (error) {
         console.log(error);
@@ -165,8 +206,17 @@ async function generateCoverLetter() {
 
         console.log(requestBody);
 
-        document.getElementById("coverLetterResults").textContent =
-        "Generating cover letter...";
+        document.getElementById("coverLetterResults").innerHTML =
+            `
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                Generating cover letter...
+            </div>
+            `;
+
+        goToView("documentsView");
+
+        setStep(4);
 
         const response = await fetch(
             `${API_BASE_URL}/generate-cover-letter`,
@@ -187,7 +237,7 @@ async function generateCoverLetter() {
         document.getElementById("coverLetterResults").textContent =
             data.cover_letter;
 
-        setStep(4);
+        
 
     } catch (error) {
         console.log(error);
@@ -341,10 +391,10 @@ async function saveApplication() {
 
     renderSavedApplications();
     updateDashboardStats();
+    goToView("applicationsView");
 }
 
 function renderSavedApplications() {
-
     const list =
         document.getElementById("savedApplicationsList");
 
@@ -352,32 +402,26 @@ function renderSavedApplications() {
         document.getElementById("statusFilter").value;
 
     const sortOption =
-    document.getElementById("sortOption").value;
+        document.getElementById("sortOption").value;
 
     list.innerHTML = "";
 
     let filteredApplications =
-    [...savedApplications];
+        [...savedApplications];
 
     if (sortOption === "highestScore") {
-
         filteredApplications.sort(
             (a, b) => b.matchScore - a.matchScore
         );
-
     } else if (sortOption === "lowestScore") {
-
         filteredApplications.sort(
             (a, b) => a.matchScore - b.matchScore
         );
-
     } else {
-
         filteredApplications.reverse();
     }
 
-    filteredApplications.forEach((application, index) => {
-
+    filteredApplications.forEach(application => {
         if (
             selectedFilter !== "All" &&
             application.status !== selectedFilter
@@ -385,28 +429,43 @@ function renderSavedApplications() {
             return;
         }
 
+        const statusClass =
+            application.status.toLowerCase();
+
         const row =
             document.createElement("tr");
 
         row.innerHTML = `
             <td>${application.company}</td>
             <td>${application.role}</td>
-            <td>${application.matchScore}</td>
-            <td>${application.priority}</td>
+            <td>
+                <div class="score-cell">
+                    <span>${application.matchScore}%</span>
+                    <div class="score-bar">
+                        <div class="score-fill"
+                            style="width: ${application.matchScore}%;">
+                        </div>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <span class="priority-badge ${application.priority.toLowerCase()}">
+                    ${application.priority}
+                </span>
+            </td>
             <td>${application.shouldApply}</td>
 
             <td>
+                <span class="status-badge ${statusClass}">
+                    ${application.status}
+                </span>
+
                 <select onchange="updateApplicationStatus(${application.id}, this.value)">
                     <option value="Saved" ${application.status === "Saved" ? "selected" : ""}>Saved</option>
-
                     <option value="Applied" ${application.status === "Applied" ? "selected" : ""}>Applied</option>
-
                     <option value="Interview" ${application.status === "Interview" ? "selected" : ""}>Interview</option>
-
                     <option value="Rejected" ${application.status === "Rejected" ? "selected" : ""}>Rejected</option>
-
                     <option value="Offer" ${application.status === "Offer" ? "selected" : ""}>Offer</option>
-
                     <option value="Accepted" ${application.status === "Accepted" ? "selected" : ""}>Accepted</option>
                 </select>
             </td>
@@ -414,7 +473,8 @@ function renderSavedApplications() {
             <td>${application.date}</td>
 
             <td>
-                <button onclick="deleteApplication(${application.id})">
+                <button class="action-button delete"
+                        onclick="deleteApplication(${application.id})">
                     Delete
                 </button>
             </td>
@@ -490,23 +550,33 @@ async function deleteApplication(id) {
 
 function updateDashboardStats() {
 
-    document.getElementById("totalCount").textContent =
+    const total =
         savedApplications.length;
 
-    document.getElementById("appliedCount").textContent =
+    const applied =
         savedApplications.filter(
             app => app.status === "Applied"
         ).length;
 
-    document.getElementById("interviewCount").textContent =
+    const interviews =
         savedApplications.filter(
             app => app.status === "Interview"
         ).length;
 
-    document.getElementById("offerCount").textContent =
+    const offers =
         savedApplications.filter(
             app => app.status === "Offer"
         ).length;
+
+    document.getElementById("totalCount").textContent = total;
+    document.getElementById("appliedCount").textContent = applied;
+    document.getElementById("interviewCount").textContent = interviews;
+    document.getElementById("offerCount").textContent = offers;
+
+    document.getElementById("dashboardTotalCount").textContent = total;
+    document.getElementById("dashboardAppliedCount").textContent = applied;
+    document.getElementById("dashboardInterviewCount").textContent = interviews;
+    document.getElementById("dashboardOfferCount").textContent = offers;
 }
 
 const storedResume =
@@ -527,7 +597,16 @@ function renderPromisingJobs() {
     const list =
         document.getElementById("promisingJobsList");
 
-    list.innerHTML = "";
+    list.innerHTML =
+        `
+        <tr>
+            <td colspan="6">
+                <div class="empty-state">
+                    No promising jobs found yet.
+                </div>
+            </td>
+        </tr>
+        `;
 
     promisingJobs.forEach((job, index) => {
 
@@ -576,11 +655,14 @@ function usePromisingJob(index) {
 async function findJobs() {
     try {
         if (!storedResumeJson) {
-            document.getElementById("promisingJobsList").innerHTML =
+           document.getElementById("promisingJobsList").innerHTML =
                 `
                 <tr>
                     <td colspan="6">
-                        Please upload your resume first.
+                        <div class="loading-state">
+                            <div class="loading-spinner"></div>
+                            Searching for matching jobs...
+                        </div>
                     </td>
                 </tr>
                 `;
@@ -700,6 +782,42 @@ async function loadApplicationsFromBackend() {
             "Failed to load applications from database."
         );
     }
+}
+
+function showView(viewId, buttonElement = null) {
+
+    const views =
+        document.querySelectorAll(".view-section");
+
+    views.forEach(view => {
+        view.classList.remove("active-view");
+    });
+
+    const targetView =
+        document.getElementById(viewId);
+
+    if (targetView) {
+        targetView.classList.add("active-view");
+    }
+
+    const buttons =
+        document.querySelectorAll(".nav-button");
+
+    buttons.forEach(button => {
+        button.classList.remove("active");
+    });
+
+    if (buttonElement) {
+        buttonElement.classList.add("active");
+    }
+}
+
+function goToView(viewId) {
+
+    showView(
+        viewId,
+        document.querySelector(`[data-view="${viewId}"]`)
+    );
 }
 
 loadApplicationsFromBackend();
