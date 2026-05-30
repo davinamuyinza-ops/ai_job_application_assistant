@@ -396,9 +396,5 @@ Requirements:
 
 
 
-def build_resume_tailoring_prompt() -> str:
-    return f"""
-{RESUME_TAILORING_ROLE}
-
-{RESUME_TAILORING_RULES}
-"""
+def build_resume_tailoring_prompt():
+    return RESUME_TAILORING_SYSTEM_PROMPT

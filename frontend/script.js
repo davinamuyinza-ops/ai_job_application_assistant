@@ -175,7 +175,7 @@ async function generateResume() {
         );
 
         const data = await response.json();
-        storedTailoredResume = data.tailored_resume_json;
+        storedTailoredResume = data.tailored_resume_json || data;
 
         console.log(data);
 
@@ -250,6 +250,11 @@ async function generateCoverLetter() {
 }
 
 function downloadResumeJson() {
+
+    if (!storedTailoredResume) {
+        showStatusMessage("No tailored resume available yet.");
+        return;
+    }
 
     const jsonString =
         JSON.stringify(
