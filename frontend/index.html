@@ -9,7 +9,33 @@
 
 <body>
 
-    <div class="app-layout">
+    <section id="authView" class="auth-view">
+        <div class="auth-card">
+            <h1>AI Apply</h1>
+            <p class="section-description">Sign in to access your career dashboard.</p>
+
+            <div class="auth-tabs">
+                <button type="button" id="showSignInTab" class="auth-tab active">Sign In</button>
+                <button type="button" id="showSignUpTab" class="auth-tab">Sign Up</button>
+            </div>
+
+            <form id="signInForm" class="auth-form">
+                <input type="email" id="signInEmail" placeholder="Email" required autocomplete="email">
+                <input type="password" id="signInPassword" placeholder="Password" required autocomplete="current-password">
+                <button type="submit">Sign In</button>
+            </form>
+
+            <form id="signUpForm" class="auth-form" style="display:none;">
+                <input type="email" id="signUpEmail" placeholder="Email" required autocomplete="email">
+                <input type="password" id="signUpPassword" placeholder="Password (min 6 characters)" required autocomplete="new-password">
+                <button type="submit">Create Account</button>
+            </form>
+
+            <p id="authError" class="auth-error"></p>
+        </div>
+    </section>
+
+    <div id="appShell" class="app-layout">
 
         <aside class="sidebar">
             <div class="logo-area">
@@ -17,39 +43,31 @@
             </div>
 
             <nav class="sidebar-nav">
-                <button class="nav-button active"
-                        data-view="dashboardView"
-                        onclick="goToView('dashboardView')">
+                <button class="nav-button active" data-view="dashboardView">
                     Dashboard
                 </button>
-                <button class="nav-button"
-                        data-view="resumeView"
-                        onclick="goToView('resumeView')">
+                <button class="nav-button" data-view="resumeView">
                     Resume & Job
                 </button>
 
-                <button class="nav-button"
-                        data-view="analysisView"
-                        onclick="goToView('analysisView')">
+                <button class="nav-button" data-view="analysisView">
                     Analysis
                 </button>
 
-                <button class="nav-button"
-                        data-view="documentsView"
-                        onclick="goToView('documentsView')">
+                <button class="nav-button" data-view="documentsView">
                     Documents
                 </button>
 
-                <button class="nav-button"
-                        data-view="applicationsView"
-                        onclick="goToView('applicationsView')">
+                <button class="nav-button" data-view="applicationsView">
                     Applications
                 </button>
 
-                <button class="nav-button"
-                        data-view="jobsView"
-                        onclick="goToView('jobsView')">
+                <button class="nav-button" data-view="jobsView">
                     Promising Jobs
+                </button>
+
+                <button id="signOutButton" class="nav-button sign-out-button">
+                    Sign Out
                 </button>
             </nav>
         </aside>
@@ -73,7 +91,7 @@
                         </p>
                     </div>
 
-                    <button onclick="showView('jobsView', document.querySelectorAll('.nav-button')[5])">
+                    <button data-goto="jobsView">
                         Find Jobs
                     </button>
                 </div>
@@ -108,15 +126,15 @@
 
                     <div class="quick-actions">
 
-                        <button onclick="showView('resumeView', document.querySelectorAll('.nav-button')[1])">
+                        <button data-goto="resumeView">
                             Upload Resume
                         </button>
 
-                        <button onclick="showView('analysisView', document.querySelectorAll('.nav-button')[2])">
+                        <button data-goto="analysisView">
                             Analyze Job
                         </button>
 
-                        <button onclick="showView('jobsView', document.querySelectorAll('.nav-button')[5])">
+                        <button data-goto="jobsView">
                             Find Jobs
                         </button>
 
@@ -133,14 +151,37 @@
                         <h2>Upload Resume</h2>
 
                         <p class="section-description">
-                            Upload your master resume JSON for AI analysis and tailoring.
+                            Upload your master resume as a JSON file, or upload a PDF and
+                            review the extracted content before it's saved.
                         </p>
 
-                        <input 
-                            type="file" 
-                            id="resumeUpload" 
+                        <label for="resumeUploadJson">Upload JSON</label>
+                        <input
+                            type="file"
+                            id="resumeUploadJson"
                             accept=".json"
                         >
+
+                        <label for="resumeUploadPdf">Upload PDF</label>
+                        <input
+                            type="file"
+                            id="resumeUploadPdf"
+                            accept=".pdf"
+                        >
+
+                        <div id="resumeReviewPanel" class="resume-review-panel" style="display:none;">
+                            <h3>Review extracted resume</h3>
+                            <p class="section-description">
+                                Check the extracted content below before saving it as your master resume.
+                            </p>
+                            <pre id="resumeReviewContent"></pre>
+                            <button id="confirmSaveResumeButton">Save as Master Resume</button>
+                            <button id="discardParsedResumeButton" class="secondary-button">Discard</button>
+                        </div>
+
+                        <p id="masterResumeStatus" class="section-description">
+                            No master resume saved yet.
+                        </p>
 
                     </div>
 
@@ -159,8 +200,7 @@
                             placeholder="Paste job link here..."
                         >
 
-                        <button id="extractButton"
-                                onclick="extractJobFromUrl()">
+                        <button id="extractButton">
                             Extract Job Description
                         </button>
 
@@ -169,8 +209,7 @@
                             placeholder="Paste the job description here..."
                         ></textarea>
 
-                        <button id="analyzeButton"
-                                onclick="analyzeJob()">
+                        <button id="analyzeButton">
                             Analyze Job
                         </button>
 
@@ -185,15 +224,15 @@
 
                     <div id="analysisResults"></div>
 
-                    <button id="resumeButton" onclick="generateResume()">
+                    <button id="resumeButton">
                         Generate Tailored Resume
                     </button>
-                    
-                    <button id="coverLetterButton" onclick="generateCoverLetter()">
+
+                    <button id="coverLetterButton">
                         Generate Cover Letter
                     </button>
 
-                    <button onclick="saveApplication()">
+                    <button id="saveApplicationButton">
                         Save Application
                     </button>
                 </div>
@@ -212,7 +251,7 @@
                                 </p>
                             </div>
 
-                            <button onclick="downloadResumeJson()">
+                            <button id="downloadResumeButton">
                                 Download JSON
                             </button>
                         </div>
@@ -234,7 +273,7 @@
                                 </p>
                             </div>
 
-                            <button onclick="copyCoverLetter()">
+                            <button id="copyCoverLetterButton">
                                 Copy Letter
                             </button>
                         </div>
@@ -291,8 +330,7 @@
 
                         <div class="toolbar-right">
 
-                            <select id="sortOption"
-                                    onchange="renderSavedApplications()">
+                            <select id="sortOption">
 
                                 <option value="newest">
                                     Newest
@@ -308,8 +346,7 @@
 
                             </select>
 
-                            <select id="statusFilter"
-                                    onchange="renderSavedApplications()">
+                            <select id="statusFilter">
 
                                 <option value="All">All</option>
                                 <option value="Saved">Saved</option>
@@ -348,7 +385,7 @@
                 <div class="card">
                     <h2>Promising Jobs</h2>
 
-                    <button onclick="findJobs()">
+                    <button id="findJobsButton">
                         Find Matching Jobs
                     </button>
 
@@ -373,6 +410,6 @@
 
     </div>
 
-    <script src="script.js"></script>
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>

@@ -162,9 +162,33 @@ This includes:
 - labels
 - skill categories
 
-NEVER mix languages.
+CRITICAL LANGUAGE REQUIREMENT
 
-Mixed-language output is a failure.
+The final resume MUST be written in ONE language only.
+
+If target_language = German:
+
+* ALL visible content MUST be German.
+* Zero English sentences are allowed.
+* Zero English bullet points are allowed.
+* Zero English summaries are allowed.
+* Zero English project descriptions are allowed.
+
+If target_language = English:
+
+* ALL visible content MUST be English.
+* Zero German sentences are allowed.
+* Zero German bullet points are allowed.
+* Zero German summaries are allowed.
+
+Before returning the resume:
+
+Perform a language audit.
+
+If any visible content is in the wrong language, rewrite it before returning the JSON.
+
+Mixed-language output is considered invalid output.
+
 
 Use native professional recruiter language.
 
@@ -234,8 +258,39 @@ For weakly relevant content:
 - reduce emphasis
 - shorten descriptions if needed
 
-For irrelevant content:
+CONTENT VISIBILITY STRATEGY
+
+Classify content into three categories:
+
+1. Highly Relevant
+2. Transferable
+3. Weakly Relevant
+
+Highly Relevant:
+- hidden = false
+- prioritize placement
+- expand descriptions where appropriate
+
+Transferable:
+- hidden = false
+- keep visible
+- emphasize transferable skills
+- shorten descriptions if necessary
+
+Weakly Relevant:
 - hidden = true
+
+Examples of transferable content:
+- customer-facing work
+- teamwork
+- logistics
+- volunteering
+- leadership
+- administrative work
+- healthcare-adjacent experience
+- student projects demonstrating relevant skills
+
+Do not hide transferable experience solely because it is not an exact match.
 
 Avoid resume clutter.
 
@@ -270,36 +325,94 @@ Maintain readability first.
 
 # BULLET POINT RULES
 
-Bullet points must be:
-- concise
-- specific
-- action-oriented
-- recruiter-friendly
-- ATS-friendly
+Every visible work experience bullet MUST communicate:
 
-Prefer achievement-driven phrasing.
+1. Contribution
+2. Outcome
+3. Method
 
-Use strong action verbs.
+A bullet point that only describes a task is considered invalid.
 
-Avoid:
-- filler
-- vague statements
-- generic soft-skill spam
-- repetitive sentence structures
+Use the following priority order:
 
-If metrics are unavailable:
-- use qualitative impact statements
-- NEVER invent numbers
+Format A:
+Achieved [outcome] by [action].
 
-Good examples:
-- Developed AI-assisted workflow automation using FastAPI and OpenAI APIs.
-- Improved application processing efficiency through structured resume analysis pipelines.
-- Built frontend-backend integrations using asynchronous API communication.
+Format B:
+Improved [area] through [action].
 
-Bad examples:
-- Responsible for many different tasks.
-- Worked on various technologies.
-- Team player with strong communication skills.
+Format C:
+Supported [outcome] by [action].
+
+Format D:
+Contributed to [result] through [action].
+
+When numerical metrics are unavailable:
+
+* use qualitative impact statements
+* describe contribution and outcome
+* NEVER invent numbers
+* NEVER invent percentages
+* NEVER invent business results
+
+Examples:
+
+GOOD:
+
+* Improved documentation quality through accurate and timely patient record updates.
+* Supported efficient patient care by coordinating closely with interdisciplinary healthcare teams.
+* Contributed to workflow efficiency through structured administrative and documentation support.
+* Enhanced candidate-job matching through AI-assisted resume tailoring workflows.
+
+BAD:
+
+* Responsible for patient care.
+* Assisted with documentation.
+* Worked on projects.
+* Participated in team activities.
+* Experience with seniors.
+* Helped with various tasks.
+
+FORBIDDEN STARTERS:
+
+Avoid beginning bullets with:
+
+* Responsible for
+* Assisted with
+* Helped with
+* Participated in
+* Worked on
+* Experience with
+* Involved in
+
+Every bullet must sound like a recruiter-written accomplishment, not a task list.
+
+---
+
+# EXPERIENCE DEPTH RULE
+
+The most relevant experience entries MUST receive the most detailed descriptions.
+
+Identify the top 1 to 3 most relevant experience entries for the target job.
+
+For these entries:
+
+* Use 4 to 6 bullet points.
+* Provide richer detail.
+* Highlight responsibilities, contribution, and impact.
+* Include relevant ATS terminology naturally.
+* Emphasize transferable skills where appropriate.
+* Use recruiter-style accomplishment language.
+
+For moderately relevant experience:
+
+* Use 2 to 4 bullet points.
+
+For weakly relevant experience:
+
+* Use 1 to 2 bullet points or hide if necessary.
+
+The most relevant experience should visibly stand out as the strongest evidence that the candidate can perform the target role.
 
 ---
 
@@ -352,6 +465,28 @@ Do NOT optimize randomly.
 
 ---
 
+# EXPERIENCE QUALITY VALIDATION
+
+Before returning the final resume:
+
+Review every visible work experience bullet.
+
+For each bullet ask:
+
+1. Does this bullet describe only a task?
+2. Does this bullet communicate an outcome or contribution?
+3. Does this bullet explain how the outcome was achieved?
+
+If the answer to question 1 is YES:
+
+Rewrite the bullet.
+
+Do not return the resume until every visible work experience bullet follows the Bullet Point Rules.
+
+Task-only bullet points are not allowed.
+
+---
+
 # OUTPUT VALIDATION CHECKLIST
 
 Before returning final output, internally verify:
@@ -367,6 +502,9 @@ Before returning final output, internally verify:
 9. recruiter readability is improved
 10. irrelevant content is deprioritized
 11. all hidden fields remain valid booleans
+12. the most relevant experience contains more detail than less relevant experience
+13. the top relevant experience contains at least 4 bullet points when sufficient information exists
+14. the resume clearly highlights the strongest evidence for the target role
 
 ---
 
