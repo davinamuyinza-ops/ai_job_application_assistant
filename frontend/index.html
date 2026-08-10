@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>AI Job Application Assistant</title>
+</head>
+
+<body>
+
+    <section id="authView" class="auth-view">
+        <div class="auth-card">
+            <h1>AI Apply</h1>
+            <p class="section-description">Sign in to access your career dashboard.</p>
+
+            <div class="auth-tabs">
+                <button type="button" id="showSignInTab" class="auth-tab active">Sign In</button>
+                <button type="button" id="showSignUpTab" class="auth-tab">Sign Up</button>
+            </div>
+
+            <form id="signInForm" class="auth-form">
+                <input type="email" id="signInEmail" placeholder="Email" required autocomplete="email">
+                <input type="password" id="signInPassword" placeholder="Password" required autocomplete="current-password">
+                <button type="submit">Sign In</button>
+            </form>
+
+            <form id="signUpForm" class="auth-form" style="display:none;">
+                <input type="email" id="signUpEmail" placeholder="Email" required autocomplete="email">
+                <input type="password" id="signUpPassword" placeholder="Password (min 6 characters)" required autocomplete="new-password">
+                <button type="submit">Create Account</button>
+            </form>
+
+            <p id="authError" class="auth-error"></p>
+        </div>
+    </section>
+
+    <div id="appShell" class="app-layout">
+
+        <aside class="sidebar">
+            <div class="logo-area">
+                <h2>AI Apply</h2>
+            </div>
+
+            <nav class="sidebar-nav">
+                <button class="nav-button active" data-view="dashboardView">
+                    Dashboard
+                </button>
+                <button class="nav-button" data-view="resumeView">
+                    Resume & Job
+                </button>
+
+                <button class="nav-button" data-view="analysisView">
+                    Analysis
+                </button>
+
+                <button class="nav-button" data-view="documentsView">
+                    Documents
+                </button>
+
+                <button class="nav-button" data-view="applicationsView">
+                    Applications
+                </button>
+
+                <button class="nav-button" data-view="jobsView">
+                    Promising Jobs
+                </button>
+
+                <button id="signOutButton" class="nav-button sign-out-button">
+                    Sign Out
+                </button>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+
+            <header class="top-header">
+                <h1>AI Job Application Assistant</h1>
+                <p>Analyze jobs, tailor resumes, generate cover letters, and track applications.</p>
+            </header>
+
+            <div id="statusMessage"></div>
+
+            <section id="dashboardView" class="view-section active-view">
+               <div class="hero-card">
+                    <div>
+                        <h1>Welcome Back</h1>
+                        <p>
+                            Manage your AI-powered job applications,
+                            tailored resumes, and application tracking.
+                        </p>
+                    </div>
+
+                    <button data-goto="jobsView">
+                        Find Jobs
+                    </button>
+                </div>
+
+                <div class="dashboard-overview">
+
+                    <div class="overview-card">
+                        <h3>Total Applications</h3>
+                        <p id="dashboardTotalCount">0</p>
+                    </div>
+
+                    <div class="overview-card">
+                        <h3>Applied</h3>
+                        <p id="dashboardAppliedCount">0</p>
+                    </div>
+
+                    <div class="overview-card">
+                        <h3>Interviews</h3>
+                        <p id="dashboardInterviewCount">0</p>
+                    </div>
+
+                    <div class="overview-card">
+                        <h3>Offers</h3>
+                        <p id="dashboardOfferCount">0</p>
+                    </div>
+
+                </div>
+
+                <div class="quick-actions-card">
+
+                    <h2>Quick Actions</h2>
+
+                    <div class="quick-actions">
+
+                        <button data-goto="resumeView">
+                            Upload Resume
+                        </button>
+
+                        <button data-goto="analysisView">
+                            Analyze Job
+                        </button>
+
+                        <button data-goto="jobsView">
+                            Find Jobs
+                        </button>
+
+                    </div>
+
+                </div>
+            </section>
+
+            <section id="resumeView" class="view-section">
+                <div class="resume-job-grid">
+
+                    <div class="card">
+
+                        <h2>Upload Resume</h2>
+
+                        <p class="section-description">
+                            Upload your master resume as a JSON file, or upload a PDF and
+                            review the extracted content before it's saved.
+                        </p>
+
+                        <label for="resumeUploadJson">Upload JSON</label>
+                        <input
+                            type="file"
+                            id="resumeUploadJson"
+                            accept=".json"
+                        >
+
+                        <label for="resumeUploadPdf">Upload PDF</label>
+                        <input
+                            type="file"
+                            id="resumeUploadPdf"
+                            accept=".pdf"
+                        >
+
+                        <div id="resumeReviewPanel" class="resume-review-panel" style="display:none;">
+                            <h3>Review extracted resume</h3>
+                            <p class="section-description">
+                                Check the extracted content below before saving it as your master resume.
+                            </p>
+                            <pre id="resumeReviewContent"></pre>
+                            <button id="confirmSaveResumeButton">Save as Master Resume</button>
+                            <button id="discardParsedResumeButton" class="secondary-button">Discard</button>
+                        </div>
+
+                        <p id="masterResumeStatus" class="section-description">
+                            No master resume saved yet.
+                        </p>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <h2>Job Input</h2>
+
+                        <p class="section-description">
+                            Paste a job description or extract directly from a job URL.
+                        </p>
+
+                        <input
+                            type="text"
+                            id="jobLink"
+                            placeholder="Paste job link here..."
+                        >
+
+                        <button id="extractButton">
+                            Extract Job Description
+                        </button>
+
+                        <textarea
+                            id="jobDescription"
+                            placeholder="Paste the job description here..."
+                        ></textarea>
+
+                        <button id="analyzeButton">
+                            Analyze Job
+                        </button>
+
+                    </div>
+
+                </div>
+            </section>
+
+            <section id="analysisView" class="view-section">
+                <div class="card">
+                    <h2>Analysis Results</h2>
+
+                    <div id="analysisResults"></div>
+
+                    <button id="resumeButton">
+                        Generate Tailored Resume
+                    </button>
+
+                    <button id="coverLetterButton">
+                        Generate Cover Letter
+                    </button>
+
+                    <button id="saveApplicationButton">
+                        Save Application
+                    </button>
+                </div>
+            </section>
+
+            <section id="documentsView" class="view-section">
+                <div class="documents-grid">
+
+                    <div class="document-card">
+
+                        <div class="document-header">
+                            <div>
+                                <h2>Tailored Resume</h2>
+                                <p>
+                                    AI-optimized resume generated for the selected job.
+                                </p>
+                            </div>
+
+                            <button id="downloadResumeButton">
+                                Download JSON
+                            </button>
+                        </div>
+
+                        <div class="document-preview">
+                            <pre id="resumeResults"></pre>
+                        </div>
+
+                    </div>
+
+
+                    <div class="document-card">
+
+                        <div class="document-header">
+                            <div>
+                                <h2>Cover Letter</h2>
+                                <p>
+                                    AI-generated personalized cover letter.
+                                </p>
+                            </div>
+
+                            <button id="copyCoverLetterButton">
+                                Copy Letter
+                            </button>
+                        </div>
+
+                        <div class="document-preview">
+                            <pre id="coverLetterResults"></pre>
+                        </div>
+
+                    </div>
+
+                </div>
+            </section>
+
+            <section id="applicationsView" class="view-section">
+                <div class="card">
+                    <h2>Saved Applications</h2>
+
+                    <div class="dashboard-stats">
+
+                        <div class="stat-card">
+                            <h3>Total</h3>
+                            <p id="totalCount">0</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <h3>Applied</h3>
+                            <p id="appliedCount">0</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <h3>Interviews</h3>
+                            <p id="interviewCount">0</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <h3>Offers</h3>
+                            <p id="offerCount">0</p>
+                        </div>
+
+                    </div>
+
+                    <div class="applications-toolbar">
+
+                        <div class="toolbar-left">
+
+                            <h2>Application Tracker</h2>
+
+                            <p>
+                                Track your applications, interviews,
+                                and offers in one place.
+                            </p>
+
+                        </div>
+
+                        <div class="toolbar-right">
+
+                            <select id="sortOption">
+
+                                <option value="newest">
+                                    Newest
+                                </option>
+
+                                <option value="highestScore">
+                                    Highest Match Score
+                                </option>
+
+                                <option value="lowestScore">
+                                    Lowest Match Score
+                                </option>
+
+                            </select>
+
+                            <select id="statusFilter">
+
+                                <option value="All">All</option>
+                                <option value="Saved">Saved</option>
+                                <option value="Applied">Applied</option>
+                                <option value="Interview">Interview</option>
+                                <option value="Rejected">Rejected</option>
+                                <option value="Offer">Offer</option>
+                                <option value="Accepted">Accepted</option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Company</th>
+                                <th>Role</th>
+                                <th>Match Score</th>
+                                <th>Priority</th>
+                                <th>Should Apply</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="savedApplicationsList"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="jobsView" class="view-section">
+                <div class="card">
+                    <h2>Promising Jobs</h2>
+
+                    <button id="findJobsButton">
+                        Find Matching Jobs
+                    </button>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Job Title</th>
+                                <th>Company</th>
+                                <th>Location</th>
+                                <th>Reason</th>
+                                <th>Link</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="promisingJobsList"></tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
