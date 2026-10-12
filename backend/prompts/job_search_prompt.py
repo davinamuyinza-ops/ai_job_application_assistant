@@ -37,6 +37,7 @@ Location rules:
 - For hybrid roles, include broader national opportunities if occasional travel is realistic.
 - For fully remote roles, include national and international opportunities.
 - Do not prioritize unrealistic relocation-heavy on-site roles unless the resume suggests relocation flexibility.
+- Also return a single inferred "location" string (a city or region name, e.g. the candidate's home city) for use as a job-search API's location parameter. If no location is discernible from the resume, use "remote". This is a default suggestion only — the user can override it themselves before searching, so infer your best guess rather than leaving it empty.
 
 Skill search rules:
 
@@ -48,10 +49,18 @@ Skill search rules:
 Search query rules:
 
 - Generate both English and German search queries when appropriate.
-- Focus on practical search phrases likely to produce real job results.
-- Include different role variations and keyword combinations.
-- Prefer modern, searchable job-board phrasing.
+- Each "query" MUST be a short job title only: 1 to 3 words (e.g. "Software Developer", "QA Tester", "IT Support", "Frontend Developer"). This is a hard limit.
+- Do NOT combine a job title with technology names, seniority words, or other keywords in the same query (e.g. never "Junior Frontend Developer JavaScript HTML CSS" or "QA Tester Selenium automation"). The query is passed as-is to a job search API that requires every word in it to match a listing verbatim, so longer or more specific phrases reliably return zero results even when good matching jobs exist. Put technology/seniority detail in "strongest_keywords" and "target_roles" instead, not in "query".
+- Include different role variations across queries rather than combining variations into one query.
 - Exclude roles that move the candidate away from their technical/informatics direction, such as pure nursing assistant, Pflegehelfer, elderly care, or non-technical hospital support roles, unless explicitly requested.
+
+Sector tagging rules:
+
+- The candidate's work history may span multiple distinct career sectors (e.g. someone with retail, logistics, and IT experience). The candidate wants to be able to pick which sector(s) to actually search in, rather than have every sector blended into one search.
+- Tag every entry in "search_queries" with a broad "sector" label reflecting which part of the candidate's background it is drawn from (e.g. "IT & Software", "Retail", "Logistics & Warehouse", "Healthcare", "Customer Service"). Use broad career categories, not specific job titles.
+- Use a small, consistent set of sector labels - do not invent a new label per query.
+- Return the full set of distinct sector labels used, in the top-level "sectors" array.
+- Bias sector selection using the career direction balancing rules above (e.g. prioritize the sector matching the candidate's strongest technical/educational direction), but still surface any other sector clearly present in their work history as its own selectable option rather than silently dropping it.
 
 Search diversity rules:
 
@@ -69,10 +78,12 @@ Output requirements:
 Required structure:
 
 {
-  "search_queries": [],
+  "search_queries": [{"query": "", "sector": ""}],
   "target_roles": [],
   "strongest_keywords": [],
-  "excluded_roles": []
+  "excluded_roles": [],
+  "location": "",
+  "sectors": []
 }
 """
 

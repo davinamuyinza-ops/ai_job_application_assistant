@@ -1,20 +1,17 @@
 import { apiJson } from "./api.js";
+import { typewriter } from "./animation.js";
+import { loadResumeIntoEditor } from "./resumeEditor.js";
 import { state } from "./state.js";
-import { goToView, setStep, showStatusMessage } from "./ui.js";
+import { goToView, refreshGating, showStatusMessage } from "./ui.js";
 
 export async function generateResume() {
     try {
-        document.getElementById("resumeButton").disabled = true;
-
-        document.getElementById("resumeResults").innerHTML = `
+        document.getElementById("resumeCardBody").innerHTML = `
             <div class="loading-state">
                 <div class="loading-spinner"></div>
                 Generating tailored resume...
             </div>
         `;
-
-        goToView("documentsView");
-        setStep(3);
 
         const data = await apiJson("/tailor-resume", {
             method: "POST",
@@ -26,24 +23,33 @@ export async function generateResume() {
         });
 
         state.tailoredResume = data.tailored_resume_json || data;
+        loadResumeIntoEditor(state.tailoredResume);
+        refreshGating();
 
-        document.getElementById("resumeResults").textContent =
-            "Tailored resume generated successfully. Ready for download.";
+        document.getElementById("resumeCardBody").innerHTML = `
+            <p class="section-description">Your tailored resume is ready to review.</p>
+            <button id="goToResumeEditorButton">Edit Resume</button>
+        `;
+
+        document.getElementById("goToResumeEditorButton").addEventListener("click", () => {
+            goToView("resumeEditorView");
+        });
+
+        return { ok: true, message: "Tailored resume generated." };
 
     } catch (error) {
         console.log(error);
 
-        document.getElementById("resumeResults").textContent =
-            "Something went wrong while generating the tailored resume.";
-    } finally {
-        document.getElementById("resumeButton").disabled = false;
+        document.getElementById("resumeCardBody").innerHTML = `
+            <p class="section-description">Something went wrong while generating the tailored resume.</p>
+        `;
+
+        return { ok: false, message: "Something went wrong while generating the tailored resume." };
     }
 }
 
 export async function generateCoverLetter() {
     try {
-        document.getElementById("coverLetterButton").disabled = true;
-
         document.getElementById("coverLetterResults").innerHTML = `
             <div class="loading-state">
                 <div class="loading-spinner"></div>
@@ -51,51 +57,31 @@ export async function generateCoverLetter() {
             </div>
         `;
 
-        goToView("documentsView");
-        setStep(4);
-
         const data = await apiJson("/generate-cover-letter", {
             method: "POST",
             body: JSON.stringify({
                 job_description: state.jobDescription,
                 resume_json: state.resumeJson,
                 job_analysis: state.jobAnalysis,
+                personal_motivation: state.personalMotivation || undefined,
             }),
         });
 
         state.coverLetter = data;
+        refreshGating();
 
-        document.getElementById("coverLetterResults").textContent = data.cover_letter;
+        typewriter(document.getElementById("coverLetterResults"), data.cover_letter);
+
+        return { ok: true, message: "Cover letter generated." };
 
     } catch (error) {
         console.log(error);
 
         document.getElementById("coverLetterResults").textContent =
             "Something went wrong while generating the cover letter.";
-    } finally {
-        document.getElementById("coverLetterButton").disabled = false;
+
+        return { ok: false, message: "Something went wrong while generating the cover letter." };
     }
-}
-
-export function downloadResumeJson() {
-    if (!state.tailoredResume) {
-        showStatusMessage("No tailored resume available yet.");
-        return;
-    }
-
-    const jsonString = JSON.stringify(state.tailoredResume, null, 2);
-
-    const blob = new Blob([jsonString], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "tailored_resume.json";
-    link.click();
-
-    showStatusMessage("Tailored resume downloaded successfully.");
-
-    URL.revokeObjectURL(url);
 }
 
 export function copyCoverLetter() {

@@ -100,6 +100,80 @@ Modify JSON values only.
 
 ---
 
+# SCHEMA FIELD REFERENCE
+
+The incoming resume_json follows this exact structure. Use this reference to know
+precisely which fields carry human-readable text that must match the target
+language, and which fields are proper nouns, dates, or technical identifiers that
+must NEVER be translated - translating a company name or a URL is itself a
+mistake, just like leaving a description in the wrong language is.
+
+{
+  "picture": { ... not visible text, do not touch },
+  "basics": {
+    "name": "NEVER translate - proper noun",
+    "headline": "TRANSLATE",
+    "email": "NEVER translate",
+    "phone": "NEVER translate",
+    "location": "NEVER translate - place name",
+    "website": {
+      "url": "NEVER translate",
+      "label": "TRANSLATE only if descriptive (e.g. 'Portfolio'); leave a proper-noun label like 'LinkedIn' or 'GitHub' as-is"
+    },
+    "customFields": [
+      {"text": "TRANSLATE if descriptive", "link": "NEVER translate"}
+    ]
+  },
+  "summary": {"title": "TRANSLATE", "content": "TRANSLATE"},
+  "sections": {
+    "<section_key>": {
+      "title": "TRANSLATE - this is the section heading itself, e.g. 'Experience' / 'Berufserfahrung'",
+      "items": [
+        {"__section": "experience",
+         "company": "NEVER translate - proper noun (employer name)",
+         "position": "TRANSLATE",
+         "location": "NEVER translate",
+         "period": "NEVER translate - dates",
+         "description": "TRANSLATE"},
+        {"__section": "education",
+         "school": "NEVER translate - proper noun",
+         "degree": "TRANSLATE",
+         "area": "TRANSLATE",
+         "grade": "NEVER translate",
+         "description": "TRANSLATE"},
+        {"__section": "projects",
+         "name": "NEVER translate - the project's given name",
+         "description": "TRANSLATE"},
+        {"__section": "skills",
+         "name": "TRANSLATE - this is a skill CATEGORY label, e.g. 'Frameworks & Tools' / 'Arbeitsweise'",
+         "keywords": "TRANSLATE only non-technical keywords (e.g. 'Strukturiertes Arbeiten' -> 'Structured working'); NEVER translate technology/tool/framework names (Python, Git, FastAPI, React, JavaScript, etc.) - those stay exactly as written regardless of target language"},
+        {"__section": "languages",
+         "language": "TRANSLATE the language name itself (e.g. 'Deutsch' -> 'German' when target_language is English)",
+         "fluency": "TRANSLATE"},
+        {"__section": "volunteer",
+         "organization": "NEVER translate - proper noun",
+         "location": "NEVER translate",
+         "description": "TRANSLATE"},
+        {"__section": "certifications",
+         "name": "NEVER translate - certification's official name",
+         "issuer": "NEVER translate - proper noun",
+         "summary": "TRANSLATE"}
+      ]
+    }
+  },
+  "customSections": ["apply the same TRANSLATE / NEVER-translate logic above by field meaning"],
+  "metadata": { ... not visible text, do not touch }
+}
+
+Every field marked TRANSLATE above counts as "visible content" for the TARGET
+LANGUAGE RULES below - including every section's own "title" field, and
+"summary.title". A resume with German section headings ("Berufserfahrung",
+"Bildung") sitting next to English descriptions is INVALID mixed-language output,
+even if every individual sentence reads fine in isolation. Section titles are not
+structural metadata - they are exactly as translatable as a bullet point.
+
+---
+
 # ANTI-HALLUCINATION RULES
 
 NEVER invent:
@@ -166,6 +240,12 @@ CRITICAL LANGUAGE REQUIREMENT
 
 The final resume MUST be written in ONE language only.
 
+See the SCHEMA FIELD REFERENCE above for the exact list of fields this applies
+to. It includes every section's "title" field (the section headings themselves,
+e.g. "Experience" / "Berufserfahrung") - a resume with translated bullet points
+but untranslated section headings is exactly as invalid as one with untranslated
+bullet points.
+
 If target_language = German:
 
 * ALL visible content MUST be German.
@@ -173,6 +253,7 @@ If target_language = German:
 * Zero English bullet points are allowed.
 * Zero English summaries are allowed.
 * Zero English project descriptions are allowed.
+* Zero English section titles are allowed.
 
 If target_language = English:
 
@@ -180,6 +261,7 @@ If target_language = English:
 * Zero German sentences are allowed.
 * Zero German bullet points are allowed.
 * Zero German summaries are allowed.
+* Zero German section titles are allowed.
 
 Before returning the resume:
 

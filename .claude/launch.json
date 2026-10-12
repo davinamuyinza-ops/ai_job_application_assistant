@@ -6,6 +6,60 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "5500", "--directory", "frontend"],
       "port": 5500
+    },
+    {
+      "name": "backend-api",
+      "runtimeExecutable": "backend/.venv/Scripts/python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--reload", "--port", "8000", "--app-dir", "backend"],
+      "port": 8000
+    },
+    {
+      "name": "voice-tool-frontend",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "5501", "--directory", "C:/Users/HP/Desktop/my_projects/ai-voice-transcription-tool/frontend"],
+      "port": 5501
+    },
+    {
+      "name": "voice-tool-backend",
+      "runtimeExecutable": "C:/Users/HP/Desktop/my_projects/ai-voice-transcription-tool/backend/.venv/Scripts/python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--reload", "--port", "8100", "--app-dir", "C:/Users/HP/Desktop/my_projects/ai-voice-transcription-tool/backend"],
+      "port": 8100
+    },
+    {
+      "name": "resume-editor-backend",
+      "runtimeExecutable": "C:/Users/HP/Desktop/my_projects/ai-resume-design-editor/backend/.venv/Scripts/python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--reload", "--port", "8200", "--app-dir", "C:/Users/HP/Desktop/my_projects/ai-resume-design-editor/backend"],
+      "port": 8200
+    },
+    {
+      "name": "resume-editor-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/Users/HP/Desktop/my_projects/ai-resume-design-editor/frontend", "run", "dev"],
+      "port": 5173
+    },
+    {
+      "name": "build-and-learn-backend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/Users/HP/Desktop/my_projects/build-and-learn/backend", "run", "dev"],
+      "port": 3001
+    },
+    {
+      "name": "build-and-learn-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/Users/HP/Desktop/my_projects/build-and-learn/frontend", "run", "dev"],
+      "port": 5174
+    },
+    {
+      "name": "guide-backend",
+      "runtimeExecutable": "C:/Users/HP/Desktop/my_projects/guide-research-assistant/backend/.venv/Scripts/python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--reload", "--reload-dir", "C:/Users/HP/Desktop/my_projects/guide-research-assistant/backend", "--port", "8000", "--app-dir", "C:/Users/HP/Desktop/my_projects/guide-research-assistant/backend"],
+      "port": 8000
+    },
+    {
+      "name": "guide-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/Users/HP/Desktop/my_projects/guide-research-assistant/frontend", "run", "dev"],
+      "port": 5173
     }
   ]
 }

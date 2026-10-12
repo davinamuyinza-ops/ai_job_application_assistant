@@ -43,6 +43,7 @@ def cover_letter(payload: CoverLetterGenerationRequest):
         payload.job_description,
         payload.resume_json,
         payload.job_analysis,
+        payload.personal_motivation,
     )
 
 

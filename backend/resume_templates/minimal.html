@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{ resume.basics.name | default('Resume') }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+    @page {
+        size: A4;
+        margin: 22mm 20mm;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: "Source Sans 3", "Segoe UI", Arial, sans-serif;
+        font-weight: 300;
+        color: #222;
+        font-size: 9.5pt;
+        line-height: 1.6;
+    }
+
+    header {
+        display: flex;
+        align-items: center;
+        gap: 14pt;
+        margin-bottom: 20pt;
+    }
+
+    .photo {
+        width: 30pt;
+        height: 30pt;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    header h1 {
+        font-size: 22pt;
+        font-weight: 300;
+        letter-spacing: 2pt;
+        text-transform: uppercase;
+        color: #111;
+    }
+
+    header .headline {
+        font-size: 10pt;
+        color: #666;
+        margin-top: 4pt;
+        letter-spacing: 0.5pt;
+    }
+
+    .contact-line {
+        font-size: 8.5pt;
+        color: #666;
+        margin-top: 24pt;
+        margin-bottom: 20pt;
+        letter-spacing: 0.3pt;
+    }
+
+    .contact-line .contact-item:not(:last-child)::after {
+        content: "      ";
+    }
+
+    .contact-line a {
+        color: #666;
+        text-decoration: none;
+    }
+
+    section {
+        margin-bottom: 16pt;
+    }
+
+    section:last-child {
+        margin-bottom: 0;
+    }
+
+    section > h2 {
+        font-size: 8.5pt;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 2.5pt;
+        color: #999;
+        margin-bottom: 10pt;
+    }
+
+    .item {
+        margin-bottom: 11pt;
+    }
+
+    .item:last-child {
+        margin-bottom: 0;
+    }
+
+    .item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10pt;
+        flex-wrap: wrap;
+    }
+
+    .item-title {
+        font-weight: 600;
+        font-size: 10pt;
+        color: #111;
+    }
+
+    .item-subtitle {
+        color: #555;
+        font-weight: 300;
+    }
+
+    .item-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10pt;
+    }
+
+    .item-row + .item-row {
+        margin-top: 1pt;
+    }
+
+    .item-primary {
+        font-weight: 600;
+        font-size: 10pt;
+        color: #111;
+    }
+
+    .item-secondary {
+        color: #555;
+        font-weight: 300;
+        font-size: 9.5pt;
+    }
+
+    .item-meta {
+        font-size: 8.5pt;
+        color: #999;
+        white-space: nowrap;
+        text-align: right;
+        font-weight: 300;
+    }
+
+    .rich-text p {
+        margin-top: 3pt;
+        color: #333;
+        font-weight: 300;
+    }
+
+    .rich-text p:empty {
+        display: none;
+    }
+
+    .rich-text ul {
+        margin-top: 4pt;
+        padding-left: 12pt;
+        color: #333;
+    }
+
+    .rich-text li {
+        margin-bottom: 2pt;
+    }
+
+    .skill-group {
+        margin-bottom: 7pt;
+    }
+
+    .skill-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .skill-group-name {
+        font-weight: 600;
+        font-size: 9pt;
+        color: #111;
+    }
+
+    .skill-group-keywords {
+        color: #555;
+        font-size: 9pt;
+        font-weight: 300;
+    }
+
+    .language-line {
+        display: inline-block;
+        font-size: 9pt;
+        color: #333;
+        margin-right: 18pt;
+        font-weight: 300;
+    }
+</style>
+</head>
+<body>
+
+    <header>
+        {% if resume.picture and not resume.picture.hidden and resume.picture.url %}
+        <img class="photo" src="{{ resume.picture.url }}" alt="">
+        {% endif %}
+        <div>
+            <h1>{{ resume.basics.name | default('') }}</h1>
+            {% if resume.basics.headline %}
+            <div class="headline">{{ resume.basics.headline }}</div>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="contact-line">
+        {% if resume.basics.email %}<span class="contact-item">{{ resume.basics.email }}</span>{% endif %}
+        {% if resume.basics.phone %}<span class="contact-item">{{ resume.basics.phone }}</span>{% endif %}
+        {% if resume.basics.location %}<span class="contact-item">{{ resume.basics.location }}</span>{% endif %}
+        {% if resume.basics.website and resume.basics.website.url %}
+        <span class="contact-item"><a href="{{ resume.basics.website.url }}">{{ resume.basics.website.label | default('Website') }}</a></span>
+        {% endif %}
+        {% for field in resume.basics.customFields %}
+        {% if field.link %}
+        <span class="contact-item"><a href="{{ field.link }}">{{ field.text | default('Link') }}</a></span>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    {% if resume.summary and not resume.summary.hidden and resume.summary.content %}
+    <section>
+        <h2>{{ resume.summary.title | default('Summary') }}</h2>
+        <div class="rich-text">{{ resume.summary.content | safe }}</div>
+    </section>
+    {% endif %}
+
+    {% set experience = resume.sections.experience %}
+    {% if experience and not experience.hidden and experience['items'] %}
+    <section>
+        <h2>{{ experience.title | default('Experience') }}</h2>
+        {% for item in experience['items'] if not item.hidden %}
+        <div class="item">
+            <div class="item-row">
+                <span class="item-primary">{{ item.company | default('') }}</span>
+                <span class="item-meta">{{ item.location | default('') }}</span>
+            </div>
+            <div class="item-row">
+                <span class="item-secondary">{{ item.position | default('') }}</span>
+                <span class="item-meta">{{ item.period | default('') }}</span>
+            </div>
+            {% if item.description %}<div class="rich-text">{{ item.description | safe }}</div>{% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    {% set education = resume.sections.education %}
+    {% if education and not education.hidden and education['items'] %}
+    <section>
+        <h2>{{ education.title | default('Education') }}</h2>
+        {% for item in education['items'] if not item.hidden %}
+        <div class="item">
+            <div class="item-row">
+                <span class="item-primary">{{ item.school | default('') }}</span>
+                <span class="item-meta">{{ item.degree | default('') }}</span>
+            </div>
+            <div class="item-row">
+                <span class="item-secondary">{{ item.area | default('') }}</span>
+                <span class="item-meta">{{ item.period | default('') }}{% if item.grade %} &middot; {{ item.grade }}{% endif %}</span>
+            </div>
+            {% if item.description %}<div class="rich-text">{{ item.description | safe }}</div>{% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    {% set projects = resume.sections.projects %}
+    {% if projects and not projects.hidden and projects['items'] %}
+    <section>
+        <h2>{{ projects.title | default('Projects') }}</h2>
+        {% for item in projects['items'] if not item.hidden %}
+        <div class="item">
+            <div class="item-header">
+                <span class="item-title">{{ item.name | default('') }}</span>
+                <div class="item-meta">{{ item.period | default('') }}</div>
+            </div>
+            {% if item.description %}<div class="rich-text">{{ item.description | safe }}</div>{% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    {% set skills = resume.sections.skills %}
+    {% if skills and not skills.hidden and skills['items'] %}
+    <section>
+        <h2>{{ skills.title | default('Skills') }}</h2>
+        {% for item in skills['items'] if not item.hidden %}
+        <div class="skill-group">
+            <div class="skill-group-name">{{ item.name | default('') }}</div>
+            {% if item.keywords %}<div class="skill-group-keywords">{{ item.keywords | join(', ') }}</div>{% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    {% set languages = resume.sections.languages %}
+    {% if languages and not languages.hidden and languages['items'] %}
+    <section>
+        <h2>{{ languages.title | default('Languages') }}</h2>
+        {% for item in languages['items'] if not item.hidden %}
+        <span class="language-line">{{ item.language | default('') }}{% if item.fluency %} ({{ item.fluency }}){% endif %}</span>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    {% set volunteer = resume.sections.volunteer %}
+    {% if volunteer and not volunteer.hidden and volunteer['items'] %}
+    <section>
+        <h2>{{ volunteer.title | default('Volunteering') }}</h2>
+        {% for item in volunteer['items'] if not item.hidden %}
+        <div class="item">
+            <div class="item-header">
+                <div>
+                    <span class="item-title">{{ item.organization | default('') }}</span>
+                    {% if item.location %}<span class="item-subtitle"> &mdash; {{ item.location }}</span>{% endif %}
+                </div>
+                <div class="item-meta">{{ item.period | default('') }}</div>
+            </div>
+            {% if item.description %}<div class="rich-text">{{ item.description | safe }}</div>{% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    {% set certifications = resume.sections.certifications %}
+    {% if certifications and not certifications.hidden and certifications['items'] %}
+    <section>
+        <h2>{{ certifications.title | default('Certifications') }}</h2>
+        {% for item in certifications['items'] if not item.hidden %}
+        <div class="item">
+            <div class="item-header">
+                <div>
+                    <span class="item-title">{{ item.name | default('') }}</span>
+                    {% if item.issuer %}<span class="item-subtitle"> &mdash; {{ item.issuer }}</span>{% endif %}
+                </div>
+                <div class="item-meta">{{ item.date | default('') }}</div>
+            </div>
+            {% if item.summary %}<div class="rich-text"><p>{{ item.summary }}</p></div>{% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+</body>
+</html>

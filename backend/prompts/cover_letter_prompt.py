@@ -43,6 +43,19 @@ Cover letter generation rules:
 - Focus on relevance and motivation.
 - The cover letter must feel personalized for the specific role.
 - The generated cover letter language MUST match the language of the job description.
+
+PERSONAL MOTIVATION:
+
+The input may include a "personal_motivation" field - the candidate's own
+spoken-then-transcribed words about why they want this specific role. A
+resume alone can't convey personal motivation, so when this field is
+present and non-empty, genuinely draw on its real sentiment and specific
+reasons when writing the letter, rather than generic enthusiasm. Do not
+quote it verbatim or reference that it was "recorded" or "transcribed" -
+weave the substance in naturally as the candidate's own voice. Translate
+it into the target language like any other input if needed. If the field
+is empty or absent, write the letter exactly as you would otherwise -
+never invent or assume a personal motivation that wasn't given.
 """
 
 

@@ -1,6 +1,7 @@
+import { animateCount, animateWidth } from "./animation.js";
 import { apiFetch, apiJson } from "./api.js";
 import { state } from "./state.js";
-import { goToView, showStatusMessage } from "./ui.js";
+import { refreshGating, showStatusMessage } from "./ui.js";
 
 export async function loadApplicationsFromBackend() {
     try {
@@ -16,6 +17,7 @@ export async function loadApplicationsFromBackend() {
             status: app.status,
             date: app.application_date,
             jobLink: app.job_link,
+            jobAnalysis: app.job_analysis,
         }));
 
         renderSavedApplications();
@@ -30,31 +32,36 @@ export async function loadApplicationsFromBackend() {
 
 export async function saveApplication() {
     if (!state.jobAnalysis) {
-        showStatusMessage("Run a job analysis first.");
-        return;
+        return { ok: false, message: "Run a job analysis first." };
     }
 
-    const payload = {
-        company: state.jobAnalysis.core_fields.company,
-        role: state.jobAnalysis.core_fields.job_title,
-        match_score: state.jobAnalysis.match_analysis.match_score,
-        priority: state.jobAnalysis.decision.priority,
-        should_apply: String(state.jobAnalysis.decision.should_apply),
-        status: "Saved",
-        application_date: new Date().toLocaleDateString(),
-        job_link: document.getElementById("jobLink").value,
-    };
+    try {
+        const payload = {
+            company: state.jobAnalysis.core_fields.company,
+            role: state.jobAnalysis.core_fields.job_title,
+            match_score: state.jobAnalysis.match_analysis.match_score,
+            priority: state.jobAnalysis.decision.priority,
+            should_apply: String(state.jobAnalysis.decision.should_apply),
+            status: "Saved",
+            application_date: new Date().toLocaleDateString(),
+            job_link: document.getElementById("jobLink").value,
+            job_analysis: state.jobAnalysis,
+        };
 
-    await apiJson("/save-application", {
-        method: "POST",
-        body: JSON.stringify(payload),
-    });
+        await apiJson("/save-application", {
+            method: "POST",
+            body: JSON.stringify(payload),
+        });
 
-    showStatusMessage("Application saved successfully.");
+        await loadApplicationsFromBackend();
+        refreshGating();
 
-    await loadApplicationsFromBackend();
+        return { ok: true, message: "Application saved." };
 
-    goToView("applicationsView");
+    } catch (error) {
+        console.log(error);
+        return { ok: false, message: "Something went wrong while saving the application." };
+    }
 }
 
 export function renderSavedApplications() {
@@ -91,9 +98,7 @@ export function renderSavedApplications() {
                 <div class="score-cell">
                     <span>${application.matchScore}%</span>
                     <div class="score-bar">
-                        <div class="score-fill"
-                            style="width: ${application.matchScore}%;">
-                        </div>
+                        <div class="score-fill" data-score="${application.matchScore}"></div>
                     </div>
                 </div>
             </td>
@@ -131,12 +136,27 @@ export function renderSavedApplications() {
 
         list.appendChild(row);
     });
+
+    list.querySelectorAll(".score-fill").forEach(fill => {
+        animateWidth(fill, Number(fill.dataset.score));
+    });
 }
 
 export async function updateApplicationStatus(id, newStatus) {
-    await apiFetch(`/applications/${id}/status?status=${newStatus}`, {
-        method: "PUT",
-    });
+    try {
+        const response = await apiFetch(`/applications/${id}/status?status=${newStatus}`, {
+            method: "PUT",
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server responded with ${response.status}`);
+        }
+    } catch (error) {
+        console.log(error);
+        showStatusMessage("Could not update status - re-loading applications.");
+        await loadApplicationsFromBackend();
+        return;
+    }
 
     const application = state.applications.find(app => app.id === id);
 
@@ -164,14 +184,17 @@ export function updateDashboardStats() {
     const applied = state.applications.filter(app => app.status === "Applied").length;
     const interviews = state.applications.filter(app => app.status === "Interview").length;
     const offers = state.applications.filter(app => app.status === "Offer").length;
+    const rejected = state.applications.filter(app => app.status === "Rejected").length;
 
-    document.getElementById("totalCount").textContent = total;
-    document.getElementById("appliedCount").textContent = applied;
-    document.getElementById("interviewCount").textContent = interviews;
-    document.getElementById("offerCount").textContent = offers;
+    animateCount(document.getElementById("totalCount"), total);
+    animateCount(document.getElementById("appliedCount"), applied);
+    animateCount(document.getElementById("interviewCount"), interviews);
+    animateCount(document.getElementById("offerCount"), offers);
+    animateCount(document.getElementById("rejectedCount"), rejected);
 
-    document.getElementById("dashboardTotalCount").textContent = total;
-    document.getElementById("dashboardAppliedCount").textContent = applied;
-    document.getElementById("dashboardInterviewCount").textContent = interviews;
-    document.getElementById("dashboardOfferCount").textContent = offers;
+    animateCount(document.getElementById("dashboardTotalCount"), total);
+    animateCount(document.getElementById("dashboardAppliedCount"), applied);
+    animateCount(document.getElementById("dashboardInterviewCount"), interviews);
+    animateCount(document.getElementById("dashboardOfferCount"), offers);
+    animateCount(document.getElementById("dashboardRejectedCount"), rejected);
 }

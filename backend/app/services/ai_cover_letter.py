@@ -9,7 +9,12 @@ from app.services.language import detect_target_language
 from prompts.cover_letter_prompt import build_cover_letter_generation_prompt
 
 
-def generate_cover_letter(job_description: str, resume_json: dict, job_analysis: dict):
+def generate_cover_letter(
+    job_description: str,
+    resume_json: dict,
+    job_analysis: dict,
+    personal_motivation: str | None = None,
+):
     response = None
     cover_letter_json = None
 
@@ -37,6 +42,7 @@ def generate_cover_letter(job_description: str, resume_json: dict, job_analysis:
                             "job_description": job_description,
                             "resume_json": resume_json,
                             "job_analysis": job_analysis,
+                            "personal_motivation": personal_motivation or "",
                             "required_output_structure": {
                                 "cover_letter": "",
                                 "key_points_used": [],

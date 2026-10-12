@@ -46,17 +46,6 @@
                 <button class="nav-button active" data-view="dashboardView">
                     Dashboard
                 </button>
-                <button class="nav-button" data-view="resumeView">
-                    Resume & Job
-                </button>
-
-                <button class="nav-button" data-view="analysisView">
-                    Analysis
-                </button>
-
-                <button class="nav-button" data-view="documentsView">
-                    Documents
-                </button>
 
                 <button class="nav-button" data-view="applicationsView">
                     Applications
@@ -64,6 +53,10 @@
 
                 <button class="nav-button" data-view="jobsView">
                     Promising Jobs
+                </button>
+
+                <button class="nav-button" data-view="resumeEditorView" disabled>
+                    Resume Editor
                 </button>
 
                 <button id="signOutButton" class="nav-button sign-out-button">
@@ -76,7 +69,30 @@
 
             <header class="top-header">
                 <h1>AI Job Application Assistant</h1>
-                <p>Analyze jobs, tailor resumes, generate cover letters, and track applications.</p>
+
+                <div class="workflow-steps" id="pipelineStepper">
+                    <button type="button" class="step" data-view="resumeView">
+                        <span class="step-badge">
+                            <span class="step-number">1</span>
+                            <span class="step-check">&#10003;</span>
+                        </span>
+                        <span class="step-label">Resume & Job</span>
+                    </button>
+                    <button type="button" class="step" data-view="analysisView" disabled>
+                        <span class="step-badge">
+                            <span class="step-number">2</span>
+                            <span class="step-check">&#10003;</span>
+                        </span>
+                        <span class="step-label">Analysis</span>
+                    </button>
+                    <button type="button" class="step" data-view="documentsView" disabled>
+                        <span class="step-badge">
+                            <span class="step-number">3</span>
+                            <span class="step-check">&#10003;</span>
+                        </span>
+                        <span class="step-label">Documents</span>
+                    </button>
+                </div>
             </header>
 
             <div id="statusMessage"></div>
@@ -116,6 +132,11 @@
                     <div class="overview-card">
                         <h3>Offers</h3>
                         <p id="dashboardOfferCount">0</p>
+                    </div>
+
+                    <div class="overview-card">
+                        <h3>Rejected</h3>
+                        <p id="dashboardRejectedCount">0</p>
                     </div>
 
                 </div>
@@ -224,44 +245,89 @@
 
                     <div id="analysisResults"></div>
 
-                    <button id="resumeButton">
-                        Generate Tailored Resume
+                    <div id="postAnalysisActions" style="display:none;">
+
+                    <label>Choose what to do with this job</label>
+                    <div class="job-sector-picker">
+                        <label class="sector-option">
+                            <input type="checkbox" id="checkGenerateResume" checked>
+                            Generate Tailored Resume
+                        </label>
+                        <label class="sector-option">
+                            <input type="checkbox" id="checkGenerateCoverLetter" checked>
+                            Generate Cover Letter
+                        </label>
+                        <label class="sector-option">
+                            <input type="checkbox" id="checkSaveApplication" checked>
+                            Save Application
+                        </label>
+                    </div>
+
+                    <div class="motivation-recorder">
+                        <label>Optional: record why this job matters to you</label>
+                        <p class="section-description">
+                            Speak briefly about why you want this role - your cover letter can draw on your own words instead of generic enthusiasm.
+                        </p>
+
+                        <div class="record-toggle-wrap">
+                            <button id="motivationRecordButton" class="record-toggle-button" type="button" aria-label="Start recording">
+                                <svg class="icon icon-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="26" height="26" aria-hidden="true">
+                                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                                </svg>
+                                <svg class="icon icon-stop" viewBox="0 0 24 24" fill="currentColor" width="22" height="22" aria-hidden="true">
+                                    <rect x="6" y="6" width="12" height="12" rx="3"></rect>
+                                </svg>
+                            </button>
+                            <p id="motivationRecordLabel" class="record-toggle-hint">Tap to record</p>
+                        </div>
+                        <p id="motivationStatus" class="section-description"></p>
+
+                        <div id="motivationLiveCaptionArea" style="display:none;">
+                            <p id="motivationLiveCaptionText"></p>
+                        </div>
+                        <div id="motivationTranscribingStatus" style="display:none;">
+                            Transcribing...
+                        </div>
+
+                        <textarea
+                            id="motivationTranscriptText"
+                            rows="4"
+                            placeholder="Your transcript will appear here after recording, and can also be typed/edited directly."
+                        ></textarea>
+                    </div>
+
+                    <button id="runSelectedActionsButton">
+                        Continue
                     </button>
 
-                    <button id="coverLetterButton">
-                        Generate Cover Letter
-                    </button>
+                    <div id="actionResultsSummary" class="action-results-summary"></div>
 
-                    <button id="saveApplicationButton">
-                        Save Application
-                    </button>
+                    </div>
                 </div>
             </section>
 
             <section id="documentsView" class="view-section">
                 <div class="documents-grid">
 
-                    <div class="document-card">
+                    <div class="document-card compact">
 
                         <div class="document-header">
                             <div>
                                 <h2>Tailored Resume</h2>
                                 <p>
-                                    AI-optimized resume generated for the selected job.
+                                    Review, adjust, and export your AI-tailored resume in the visual editor.
                                 </p>
                             </div>
-
-                            <button id="downloadResumeButton">
-                                Download JSON
-                            </button>
                         </div>
 
-                        <div class="document-preview">
-                            <pre id="resumeResults"></pre>
+                        <div class="document-preview" id="resumeCardBody">
+                            <p class="section-description">Not generated yet.</p>
                         </div>
 
                     </div>
-
 
                     <div class="document-card">
 
@@ -285,6 +351,16 @@
                     </div>
 
                 </div>
+            </section>
+
+            <section id="resumeEditorView" class="view-section">
+                <button type="button" id="exitResumeEditorButton" data-goto="documentsView">
+                    &larr; Back
+                </button>
+                <iframe
+                    id="resumeEditorFrame"
+                    title="Resume Editor"
+                ></iframe>
             </section>
 
             <section id="applicationsView" class="view-section">
@@ -311,6 +387,11 @@
                         <div class="stat-card">
                             <h3>Offers</h3>
                             <p id="offerCount">0</p>
+                        </div>
+
+                        <div class="stat-card">
+                            <h3>Rejected</h3>
+                            <p id="rejectedCount">0</p>
                         </div>
 
                     </div>
@@ -385,6 +466,96 @@
                 <div class="card">
                     <h2>Promising Jobs</h2>
 
+                    <p class="section-description">
+                        Search keywords come from your master resume. Choose where to search.
+                    </p>
+
+                    <button id="suggestSectorsButton" class="secondary-button">
+                        Suggest Sectors From My Resume
+                        <span id="suggestSectorsSpinner" class="inline-spinner" style="display:none;"></span>
+                    </button>
+
+                    <div id="jobSectorPicker" class="job-sector-picker"></div>
+
+                    <div class="job-filters">
+                        <h3>Filters</h3>
+
+                        <label for="jobCountrySelect">Country</label>
+                        <select id="jobCountrySelect">
+                            <option value="de" selected>Germany</option>
+                            <option value="at">Austria</option>
+                            <option value="gb">United Kingdom</option>
+                            <option value="nl">Netherlands</option>
+                            <option value="fr">France</option>
+                            <option value="pl">Poland</option>
+                            <option value="it">Italy</option>
+                            <option value="us">United States</option>
+                            <option value="ca">Canada</option>
+                            <option value="au">Australia</option>
+                            <option value="in">India</option>
+                            <option value="br">Brazil</option>
+                            <option value="za">South Africa</option>
+                            <option value="sg">Singapore</option>
+                            <option value="mx">Mexico</option>
+                            <option value="nz">New Zealand</option>
+                        </select>
+
+                        <label for="jobLocationInput">City or region (optional)</label>
+                        <input
+                            type="text"
+                            id="jobLocationInput"
+                            placeholder="Leave blank to let AI infer it from your resume"
+                        >
+
+                        <label>Job Type</label>
+                        <div class="job-sector-picker">
+                            <label class="sector-option">
+                                <input type="checkbox" id="jobTypeFullTime" value="full_time">
+                                Full-time
+                            </label>
+                            <label class="sector-option">
+                                <input type="checkbox" id="jobTypePartTime" value="part_time">
+                                Part-time
+                            </label>
+                            <label class="sector-option">
+                                <input type="checkbox" id="jobTypeContract" value="contract">
+                                Contract
+                            </label>
+                            <label class="sector-option">
+                                <input type="checkbox" id="jobTypePermanent" value="permanent">
+                                Permanent
+                            </label>
+                        </div>
+
+                        <div class="job-filters-row">
+                            <div>
+                                <label for="jobSalaryMin">Min salary (optional)</label>
+                                <input type="number" id="jobSalaryMin" min="0" placeholder="e.g. 40000">
+                            </div>
+                            <div>
+                                <label for="jobSalaryMax">Max salary (optional)</label>
+                                <input type="number" id="jobSalaryMax" min="0" placeholder="e.g. 90000">
+                            </div>
+                        </div>
+
+                        <div class="job-filters-row">
+                            <div>
+                                <label for="jobMaxDaysOld">Posted within</label>
+                                <select id="jobMaxDaysOld">
+                                    <option value="" selected>Any time</option>
+                                    <option value="1">Last 24 hours</option>
+                                    <option value="3">Last 3 days</option>
+                                    <option value="7">Last week</option>
+                                    <option value="30">Last month</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="jobDistance">Search radius, km (optional)</label>
+                                <input type="number" id="jobDistance" min="0" placeholder="e.g. 25">
+                            </div>
+                        </div>
+                    </div>
+
                     <button id="findJobsButton">
                         Find Matching Jobs
                     </button>
@@ -395,6 +566,7 @@
                                 <th>Job Title</th>
                                 <th>Company</th>
                                 <th>Location</th>
+                                <th>Match Score</th>
                                 <th>Reason</th>
                                 <th>Link</th>
                                 <th>Action</th>

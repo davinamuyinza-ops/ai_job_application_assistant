@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import CurrentUser, get_current_user
 from app.models.application import Application
-from app.schemas.application import SaveApplicationRequest
+from app.schemas.application import ApplicationResponse, SaveApplicationRequest
 
 router = APIRouter(dependencies=[Depends(get_current_user)])
 
@@ -25,6 +25,7 @@ def save_application(
         status=payload.status,
         application_date=payload.application_date,
         job_link=payload.job_link,
+        job_analysis=payload.job_analysis,
     )
 
     db.add(saved_application)
@@ -37,7 +38,7 @@ def save_application(
     }
 
 
-@router.get("/applications")
+@router.get("/applications", response_model=list[ApplicationResponse])
 def get_applications(
     current_user: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_db),

@@ -1,9 +1,12 @@
 import { extractJobFromUrl, analyzeJob } from "./analysis.js";
+import { celebrate, rippleOnClick, spotlightFollow } from "./animation.js";
 import { getSession, isSupabaseConfigured, onAuthStateChange, signIn, signOut, signUp } from "./auth.js";
 import { deleteApplication, loadApplicationsFromBackend, renderSavedApplications, saveApplication, updateApplicationStatus } from "./applications.js";
-import { copyCoverLetter, downloadResumeJson, generateCoverLetter, generateResume } from "./documents.js";
-import { findJobs, renderPromisingJobs, usePromisingJob } from "./jobs.js";
+import { copyCoverLetter, generateCoverLetter, generateResume } from "./documents.js";
+import { findJobs, renderPromisingJobs, suggestSectors, toggleJobSector, usePromisingJob } from "./jobs.js";
+import { initMotivationRecorder } from "./motivationRecorder.js";
 import { confirmParsedResume, discardParsedResume, loadMasterResume, parseResumePdf, uploadResumeJsonFile } from "./resume.js";
+import { initResumeEditorBridge } from "./resumeEditor.js";
 import { state } from "./state.js";
 import { goToView, showAppShell, showAuthScreen, showStatusMessage } from "./ui.js";
 
@@ -12,9 +15,20 @@ import { goToView, showAppShell, showAuthScreen, showStatusMessage } from "./ui.
 window.deleteApplication = deleteApplication;
 window.updateApplicationStatus = updateApplicationStatus;
 window.usePromisingJob = usePromisingJob;
+window.toggleJobSector = toggleJobSector;
+
+function wireRippleEffect() {
+    document.addEventListener("click", (event) => {
+        const button = event.target.closest("button");
+
+        if (button) {
+            rippleOnClick({ currentTarget: button, clientX: event.clientX, clientY: event.clientY });
+        }
+    });
+}
 
 function wireNav() {
-    document.querySelectorAll(".nav-button[data-view]").forEach(button => {
+    document.querySelectorAll("[data-view]").forEach(button => {
         button.addEventListener("click", () => goToView(button.dataset.view));
     });
 
@@ -142,14 +156,72 @@ function wireResumeUploads() {
     });
 }
 
+function renderActionResultsSummary(results) {
+    const container = document.getElementById("actionResultsSummary");
+
+    container.innerHTML = "";
+
+    results.forEach((result, index) => {
+        const line = document.createElement("div");
+        line.className = `action-result ${result.ok ? "success" : "error"}`;
+        line.textContent = result.message;
+        line.style.animationDelay = `${index * 120}ms`;
+        container.appendChild(line);
+    });
+}
+
+async function runSelectedActions() {
+    const doResume = document.getElementById("checkGenerateResume").checked;
+    const doCoverLetter = document.getElementById("checkGenerateCoverLetter").checked;
+    const doSave = document.getElementById("checkSaveApplication").checked;
+
+    if (!doResume && !doCoverLetter && !doSave) {
+        showStatusMessage("Select at least one action first.");
+        return;
+    }
+
+    const continueButton = document.getElementById("runSelectedActionsButton");
+    continueButton.disabled = true;
+
+    // Resume and cover letter each render their own progress/result inline in
+    // their Documents card, so we jump there right away and let the user
+    // watch both generate side by side, rather than waiting on Analysis.
+    if (doResume || doCoverLetter) {
+        goToView("documentsView");
+
+        const [resumeResult, coverLetterResult, saveResult] = await Promise.all([
+            doResume ? generateResume() : Promise.resolve(null),
+            doCoverLetter ? generateCoverLetter() : Promise.resolve(null),
+            doSave ? saveApplication() : Promise.resolve(null),
+        ]);
+
+        if (resumeResult?.ok || coverLetterResult?.ok) {
+            celebrate(document.querySelector(".documents-grid"));
+        }
+
+        if (saveResult) {
+            showStatusMessage(saveResult.message);
+        }
+    } else {
+        const saveResult = await saveApplication();
+
+        if (saveResult.ok) {
+            celebrate(document.querySelector(".sidebar-nav"));
+            goToView("applicationsView");
+        } else {
+            renderActionResultsSummary([saveResult]);
+        }
+    }
+
+    continueButton.disabled = false;
+}
+
 function wireActionButtons() {
     document.getElementById("extractButton").addEventListener("click", extractJobFromUrl);
     document.getElementById("analyzeButton").addEventListener("click", analyzeJob);
-    document.getElementById("resumeButton").addEventListener("click", generateResume);
-    document.getElementById("coverLetterButton").addEventListener("click", generateCoverLetter);
-    document.getElementById("saveApplicationButton").addEventListener("click", saveApplication);
-    document.getElementById("downloadResumeButton").addEventListener("click", downloadResumeJson);
+    document.getElementById("runSelectedActionsButton").addEventListener("click", runSelectedActions);
     document.getElementById("copyCoverLetterButton").addEventListener("click", copyCoverLetter);
+    document.getElementById("suggestSectorsButton").addEventListener("click", suggestSectors);
     document.getElementById("findJobsButton").addEventListener("click", findJobs);
     document.getElementById("statusFilter").addEventListener("change", renderSavedApplications);
     document.getElementById("sortOption").addEventListener("change", renderSavedApplications);
@@ -166,10 +238,20 @@ async function initApp() {
 }
 
 async function bootstrap() {
+    wireRippleEffect();
+
+    const heroCard = document.querySelector(".hero-card");
+
+    if (heroCard) {
+        spotlightFollow(heroCard);
+    }
+
     wireNav();
     wireAuthForms();
     wireResumeUploads();
     wireActionButtons();
+    initMotivationRecorder();
+    initResumeEditorBridge();
 
     if (!isSupabaseConfigured()) {
         document.getElementById("authError").textContent =

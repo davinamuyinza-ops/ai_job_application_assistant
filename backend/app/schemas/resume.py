@@ -34,3 +34,12 @@ class MasterResumeResponse(BaseModel):
 
 class ResumeParsePdfResponse(BaseModel):
     resume_json: dict
+
+
+class GeneratePdfRequest(BaseModel):
+    resume_json: dict
+    template: str
+
+
+class PreferredTemplateRequest(BaseModel):
+    preferred_template: str

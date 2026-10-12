@@ -1,6 +1,45 @@
 import { apiJson } from "./api.js";
+import { celebrate } from "./animation.js";
 import { state } from "./state.js";
-import { goToView, setStep, showStatusMessage } from "./ui.js";
+import { goToView, refreshGating, showStatusMessage } from "./ui.js";
+
+const STRONG_MATCH_THRESHOLD = 70;
+
+function animateScoreCircle(circle, targetScore, duration = 800) {
+    const span = circle.querySelector("span");
+    const start = performance.now();
+
+    function tick(now) {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(targetScore * eased);
+
+        span.textContent = `${current}%`;
+        circle.style.background = `conic-gradient(#2563eb ${current}%, #dbe3f0 0)`;
+
+        if (progress < 1) {
+            requestAnimationFrame(tick);
+        } else {
+            const bounce = circle.animate(
+                [
+                    { transform: "scale(1)" },
+                    { transform: "scale(1.08)" },
+                    { transform: "scale(1)" },
+                ],
+                { duration: 350, easing: "cubic-bezier(0.34, 1.56, 0.64, 1)" },
+            );
+
+            // A strong match is a genuine "good news" moment, so it shares the
+            // same celebration language used later when Continue succeeds -
+            // one consistent reward motif instead of two unrelated effects.
+            if (targetScore >= STRONG_MATCH_THRESHOLD) {
+                bounce.addEventListener("finish", () => celebrate(circle));
+            }
+        }
+    }
+
+    requestAnimationFrame(tick);
+}
 
 export async function analyzeJob() {
     try {
@@ -10,17 +49,21 @@ export async function analyzeJob() {
         state.jobDescription = jobDescription;
 
         if (!state.resumeJson) {
-            document.getElementById("analysisResults").textContent =
-                "Please upload your resume first.";
+            showStatusMessage("Please upload your resume first.");
 
             return;
         }
 
-        document.getElementById("analysisResults").textContent =
-            "Analyzing job description...";
+        document.getElementById("postAnalysisActions").style.display = "none";
+
+        document.getElementById("analysisResults").innerHTML = `
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                Analyzing job description...
+            </div>
+        `;
 
         goToView("analysisView");
-        setStep(2);
 
         const data = await apiJson("/analyze-job", {
             method: "POST",
@@ -31,12 +74,13 @@ export async function analyzeJob() {
         });
 
         state.jobAnalysis = data;
+        refreshGating();
 
         document.getElementById("analysisResults").innerHTML = `
             <div class="analysis-dashboard">
 
                 <div class="score-circle">
-                    <span>${data.match_analysis.match_score}%</span>
+                    <span>0%</span>
                     <p>Match Score</p>
                 </div>
 
@@ -62,6 +106,10 @@ export async function analyzeJob() {
 
             </div>
         `;
+
+        animateScoreCircle(document.querySelector(".score-circle"), data.match_analysis.match_score);
+
+        document.getElementById("postAnalysisActions").style.display = "block";
 
     } catch (error) {
         console.log(error);

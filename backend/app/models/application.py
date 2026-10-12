@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.dialects.postgresql import JSONB
 
 from app.core.database import Base
 
@@ -16,3 +17,4 @@ class Application(Base):
     status = Column(String)
     application_date = Column(String)
     job_link = Column(String)
+    job_analysis = Column(JSONB, nullable=True)

@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "./config.js";
-import { state } from "./state.js";
+import { resetPipelineState, state } from "./state.js";
 
 const isConfigured =
     SUPABASE_URL.startsWith("http") &&
@@ -54,6 +54,7 @@ export async function signOut() {
 
     await supabase.auth.signOut();
     state.session = null;
+    resetPipelineState();
 }
 
 export async function getSession() {
