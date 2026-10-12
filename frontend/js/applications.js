@@ -1,7 +1,20 @@
 import { animateCount, animateWidth } from "./animation.js";
 import { apiFetch, apiJson } from "./api.js";
+import { showCoverLetter, showResumeMissing, showResumeReady } from "./documents.js";
+import { loadResumeIntoEditor } from "./resumeEditor.js";
 import { state } from "./state.js";
-import { refreshGating, showStatusMessage } from "./ui.js";
+import { goToView, refreshGating, showStatusMessage } from "./ui.js";
+
+// Company/role/etc. come from AI reading third-party job postings, so they're
+// untrusted text and must never be interpolated into innerHTML raw.
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
 
 export async function loadApplicationsFromBackend() {
     try {
@@ -18,6 +31,7 @@ export async function loadApplicationsFromBackend() {
             date: app.application_date,
             jobLink: app.job_link,
             jobAnalysis: app.job_analysis,
+            hasDocuments: Boolean(app.has_tailored_resume || app.has_cover_letter),
         }));
 
         renderSavedApplications();
@@ -46,12 +60,19 @@ export async function saveApplication() {
             application_date: new Date().toLocaleDateString(),
             job_link: document.getElementById("jobLink").value,
             job_analysis: state.jobAnalysis,
+            // Documents that finished generating before this save are stored
+            // with the application so they survive a refresh.
+            tailored_resume: state.tailoredResume || null,
+            cover_letter: state.coverLetter?.cover_letter || null,
+            job_description: state.jobDescription || null,
         };
 
-        await apiJson("/save-application", {
+        const saved = await apiJson("/save-application", {
             method: "POST",
             body: JSON.stringify(payload),
         });
+
+        state.currentApplicationId = saved.id;
 
         await loadApplicationsFromBackend();
         refreshGating();
@@ -87,31 +108,31 @@ export function renderSavedApplications() {
             return;
         }
 
-        const statusClass = application.status.toLowerCase();
+        const statusClass = escapeHtml(application.status.toLowerCase());
 
         const row = document.createElement("tr");
 
         row.innerHTML = `
-            <td>${application.company}</td>
-            <td>${application.role}</td>
+            <td>${escapeHtml(application.company)}</td>
+            <td>${escapeHtml(application.role)}</td>
             <td>
                 <div class="score-cell">
-                    <span>${application.matchScore}%</span>
+                    <span>${Number(application.matchScore)}%</span>
                     <div class="score-bar">
-                        <div class="score-fill" data-score="${application.matchScore}"></div>
+                        <div class="score-fill" data-score="${Number(application.matchScore)}"></div>
                     </div>
                 </div>
             </td>
             <td>
-                <span class="priority-badge ${application.priority.toLowerCase()}">
-                    ${application.priority}
+                <span class="priority-badge ${escapeHtml(application.priority.toLowerCase())}">
+                    ${escapeHtml(application.priority)}
                 </span>
             </td>
-            <td>${application.shouldApply}</td>
+            <td>${escapeHtml(application.shouldApply)}</td>
 
             <td>
                 <span class="status-badge ${statusClass}">
-                    ${application.status}
+                    ${escapeHtml(application.status)}
                 </span>
 
                 <select onchange="updateApplicationStatus(${application.id}, this.value)">
@@ -124,9 +145,13 @@ export function renderSavedApplications() {
                 </select>
             </td>
 
-            <td>${application.date}</td>
+            <td>${escapeHtml(application.date)}</td>
 
             <td>
+                ${application.hasDocuments ? `
+                <button onclick="openApplicationDocuments(${Number(application.id)})">
+                    Open
+                </button>` : ""}
                 <button class="action-button delete"
                         onclick="deleteApplication(${application.id})">
                     Delete
@@ -140,6 +165,33 @@ export function renderSavedApplications() {
     list.querySelectorAll(".score-fill").forEach(fill => {
         animateWidth(fill, Number(fill.dataset.score));
     });
+}
+
+export async function openApplicationDocuments(id) {
+    try {
+        const documents = await apiJson(`/applications/${id}/documents`);
+        const application = state.applications.find(app => app.id === id);
+
+        state.currentApplicationId = id;
+        state.jobAnalysis = application?.jobAnalysis || state.jobAnalysis;
+        state.jobDescription = documents.job_description || "";
+        state.tailoredResume = documents.tailored_resume || null;
+        state.coverLetter = documents.cover_letter ? { cover_letter: documents.cover_letter } : null;
+
+        if (state.tailoredResume) {
+            loadResumeIntoEditor(state.tailoredResume);
+            showResumeReady();
+        } else {
+            showResumeMissing();
+        }
+
+        showCoverLetter(documents.cover_letter);
+
+        goToView("documentsView");
+    } catch (error) {
+        console.log(error);
+        showStatusMessage("Could not open the saved documents.");
+    }
 }
 
 export async function updateApplicationStatus(id, newStatus) {

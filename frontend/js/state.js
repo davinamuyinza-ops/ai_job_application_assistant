@@ -7,6 +7,7 @@ export const state = {
     tailoredResume: null,
     personalMotivation: "",
     coverLetter: null,
+    currentApplicationId: null,
     applications: [],
     promisingJobs: [],
     jobSectors: [],
@@ -20,6 +21,7 @@ export function resetPipelineState() {
     state.tailoredResume = null;
     state.personalMotivation = "";
     state.coverLetter = null;
+    state.currentApplicationId = null;
     state.applications = [];
     state.promisingJobs = [];
     state.jobSectors = [];

@@ -4,6 +4,38 @@ import { loadResumeIntoEditor } from "./resumeEditor.js";
 import { state } from "./state.js";
 import { goToView, refreshGating, showStatusMessage } from "./ui.js";
 
+export function showResumeReady() {
+    document.getElementById("resumeCardBody").innerHTML = `
+        <p class="section-description">Your tailored resume is ready to review.</p>
+        <button id="goToResumeEditorButton">Edit Resume</button>
+    `;
+
+    document.getElementById("goToResumeEditorButton").addEventListener("click", () => {
+        goToView("resumeEditorView");
+    });
+}
+
+export function showResumeMissing() {
+    document.getElementById("resumeCardBody").innerHTML = `
+        <p class="section-description">No tailored resume was saved for this application.</p>
+    `;
+}
+
+export function showCoverLetter(text, { animate = false } = {}) {
+    const target = document.getElementById("coverLetterResults");
+
+    if (!text) {
+        target.textContent = "No cover letter was saved for this application.";
+        return;
+    }
+
+    if (animate) {
+        typewriter(target, text);
+    } else {
+        target.textContent = text;
+    }
+}
+
 export async function generateResume() {
     try {
         document.getElementById("resumeCardBody").innerHTML = `
@@ -26,14 +58,7 @@ export async function generateResume() {
         loadResumeIntoEditor(state.tailoredResume);
         refreshGating();
 
-        document.getElementById("resumeCardBody").innerHTML = `
-            <p class="section-description">Your tailored resume is ready to review.</p>
-            <button id="goToResumeEditorButton">Edit Resume</button>
-        `;
-
-        document.getElementById("goToResumeEditorButton").addEventListener("click", () => {
-            goToView("resumeEditorView");
-        });
+        showResumeReady();
 
         return { ok: true, message: "Tailored resume generated." };
 
@@ -70,7 +95,7 @@ export async function generateCoverLetter() {
         state.coverLetter = data;
         refreshGating();
 
-        typewriter(document.getElementById("coverLetterResults"), data.cover_letter);
+        showCoverLetter(data.cover_letter, { animate: true });
 
         return { ok: true, message: "Cover letter generated." };
 

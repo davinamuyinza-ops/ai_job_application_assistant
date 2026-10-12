@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 
 from app.core.database import Base
@@ -18,3 +18,6 @@ class Application(Base):
     application_date = Column(String)
     job_link = Column(String)
     job_analysis = Column(JSONB, nullable=True)
+    tailored_resume = Column(JSONB, nullable=True)
+    cover_letter = Column(Text, nullable=True)
+    job_description = Column(Text, nullable=True)

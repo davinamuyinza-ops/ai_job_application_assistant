@@ -1,12 +1,12 @@
 import { extractJobFromUrl, analyzeJob } from "./analysis.js";
 import { celebrate, rippleOnClick, spotlightFollow } from "./animation.js";
 import { getSession, isSupabaseConfigured, onAuthStateChange, signIn, signOut, signUp } from "./auth.js";
-import { deleteApplication, loadApplicationsFromBackend, renderSavedApplications, saveApplication, updateApplicationStatus } from "./applications.js";
+import { deleteApplication, loadApplicationsFromBackend, openApplicationDocuments, renderSavedApplications, saveApplication, updateApplicationStatus } from "./applications.js";
 import { copyCoverLetter, generateCoverLetter, generateResume } from "./documents.js";
 import { findJobs, renderPromisingJobs, suggestSectors, toggleJobSector, usePromisingJob } from "./jobs.js";
 import { initMotivationRecorder } from "./motivationRecorder.js";
 import { confirmParsedResume, discardParsedResume, loadMasterResume, parseResumePdf, uploadResumeJsonFile } from "./resume.js";
-import { initResumeEditorBridge } from "./resumeEditor.js";
+import { initResumeEditorBridge, sendAuthTokenToEditor } from "./resumeEditor.js";
 import { state } from "./state.js";
 import { goToView, showAppShell, showAuthScreen, showStatusMessage } from "./ui.js";
 
@@ -16,6 +16,7 @@ window.deleteApplication = deleteApplication;
 window.updateApplicationStatus = updateApplicationStatus;
 window.usePromisingJob = usePromisingJob;
 window.toggleJobSector = toggleJobSector;
+window.openApplicationDocuments = openApplicationDocuments;
 
 function wireRippleEffect() {
     document.addEventListener("click", (event) => {
@@ -189,15 +190,18 @@ async function runSelectedActions() {
     if (doResume || doCoverLetter) {
         goToView("documentsView");
 
-        const [resumeResult, coverLetterResult, saveResult] = await Promise.all([
+        const [resumeResult, coverLetterResult] = await Promise.all([
             doResume ? generateResume() : Promise.resolve(null),
             doCoverLetter ? generateCoverLetter() : Promise.resolve(null),
-            doSave ? saveApplication() : Promise.resolve(null),
         ]);
 
         if (resumeResult?.ok || coverLetterResult?.ok) {
             celebrate(document.querySelector(".documents-grid"));
         }
+
+        // Saving waits for generation so the finished documents are stored
+        // with the application instead of being lost on refresh.
+        const saveResult = doSave ? await saveApplication() : null;
 
         if (saveResult) {
             showStatusMessage(saveResult.message);
@@ -262,6 +266,8 @@ async function bootstrap() {
 
     onAuthStateChange((session) => {
         if (session) {
+            // Forwards Supabase's hourly token refresh to the embedded editor.
+            sendAuthTokenToEditor();
             showAppShell();
             initApp();
         } else {
