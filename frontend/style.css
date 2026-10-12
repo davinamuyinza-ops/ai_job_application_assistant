@@ -183,12 +183,6 @@ body {
     box-shadow: 0 8px 24px rgba(15, 51, 129, 0.08);
 }
 
-.workflow-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 24px;
-}
-
 input[type="file"],
 input[type="text"],
 textarea,
@@ -457,7 +451,6 @@ tbody tr:nth-child(even) {
         width: 100%;
     }
 
-    .workflow-grid,
     .dashboard-stats {
         grid-template-columns: 1fr;
     }
@@ -759,12 +752,6 @@ tbody tr:nth-child(even) {
 
 .document-header p {
     color: #64748b;
-}
-
-.document-actions {
-    display: flex;
-    gap: 10px;
-    flex-shrink: 0;
 }
 
 .motivation-recorder {
