@@ -420,16 +420,17 @@ table {
 th {
     background-color: #0f3381;
     color: white;
-    padding: 14px;
+    padding: 14px 10px;
     text-align: left;
     font-size: 14px;
 }
 
 td {
-    padding: 14px;
+    padding: 14px 10px;
     border-bottom: 1px solid #dbe3f0;
     font-size: 14px;
     vertical-align: middle;
+    overflow-wrap: anywhere;
 }
 
 tr:hover {
